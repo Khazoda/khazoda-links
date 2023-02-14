@@ -1,5 +1,6 @@
 <script>
 	import Card from '$lib/Card.svelte';
+	import FooterBar from '$lib/FooterBar.svelte';
 	import SpeechSequence from '$lib/SpeechSequence.svelte';
 </script>
 
@@ -29,5 +30,7 @@
 			siteDescription="Repository of my mods on CurseForge"
 		/>
 	</div>
-	ToDo: Theme swapping & stripped down mobile reactivity, GitHub/Twitter?Insta? icons
+	<FooterBar />
+
+	<!-- ToDo: Theme swapping & stripped down mobile reactivity, GitHub/Twitter?Insta? icons -->
 </main>

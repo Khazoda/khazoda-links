@@ -27,20 +27,17 @@
 	}
 </script>
 
-<div id="speech-wrapper" class="chat chat-start mt-6 mb-2">
-	<div id="speech-avatar" class="chat-image avatar">
+<div id="speech-wrapper" class="chat chat-start mt-6 mb-2 pt-0 pb-0 drop-shadow-xl">
+	<div id="speech-avatar" class="chat-image">
 		<div class="w-10 rounded-full shadow-xl">
-			<img
-				alt="June's avatar"
-				src="https://yt3.ggpht.com/fL5t5DZL3yXCA3UIf88Ec6PwOUw749HXNdw2iUKNce-y2sg365bjlTLkSWbisX5B_Vmd4zufDoA=s88-c-k-c0x00ffffff-no-rj-mo"
-			/>
+			<img alt="June's avatar" src="/junegoblin.png" />
 		</div>
 	</div>
 	{#if visible}
 		<div
 			transition:typewriter={{ speed: 4 }}
 			id="speech-text"
-			class="chat-bubble max-w-[680px] overflow-ellipsis overflow-hidden text-md max-h-[2.5rem] min-h-[2.5rem]"
+			class="chat-bubble rounded-tl-none rounded-br-none max-w-[680px] overflow-ellipsis overflow-hidden text-md max-h-[2.5rem] min-h-[2.5rem]"
 		>
 			{activeSentence}
 		</div>

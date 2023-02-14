@@ -20,7 +20,7 @@
 
 <div
 	id="card-wrapper"
-	class="card-grid drop-shadow-lg bg-[url('/card-bg.svg')] bg-no-repeat bg-cover outline-success rounded-br-xl"
+	class="card-grid drop-shadow-lg bg-[url('/card-bg.svg')] bg-no-repeat bg-cover outline-success rounded-none"
 >
 	<h1 id="card-title" class="text-2xl pl-4 pt-2">{siteName}</h1>
 	<img
@@ -53,6 +53,5 @@
 		gap: 0.25rem;
 
 		/* background: #191d24; */
-		border-radius: 1rem;
 	}
 </style>
