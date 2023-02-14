@@ -6,7 +6,7 @@
 </script>
 
 <main
-	class="relative m-auto max-w-[680px] w-screen h-fit flex flex-col items-center pt-12 md:justify-center md:pt-0"
+	class="relative m-auto max-w-[680px] w-screen h-fit min-h-screen flex flex-col items-center pt-12 md:justify-center md:pt-0"
 >
 	<SpeechSequence />
 	<Cards />
