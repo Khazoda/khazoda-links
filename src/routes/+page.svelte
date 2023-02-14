@@ -1,35 +1,15 @@
 <script>
-	import Card from '$lib/Card.svelte';
+	import Cards from '$lib/Cards.svelte';
 	import FooterBar from '$lib/FooterBar.svelte';
 	import SpeechSequence from '$lib/SpeechSequence.svelte';
+	import MediaQuery from '$lib/MediaQuery.svelte';
 </script>
 
 <main
-	class="relative m-auto max-w-[680px] w-screen h-screen flex flex-col items-center justify-center"
+	class="relative m-auto max-w-[680px] w-screen h-screen flex flex-col items-center pt-12 md:justify-center md:pt-0"
 >
 	<SpeechSequence />
-	<div class="flex flex-col justify-center gap-1">
-		<Card
-			siteName="Personal Site"
-			siteWingding="/personal_site.svg"
-			siteDescription="Browse my previous work and personal projects"
-		/>
-		<Card
-			siteName="SeaCroak"
-			siteWingding="/seacroak.svg"
-			siteDescription="Explore the applications, games and projects I've released under the SeaCroak brand"
-		/>
-		<Card
-			siteName="Modrinth"
-			siteWingding="/modrinth.svg"
-			siteDescription="Repository of my mods on Modrinth"
-		/>
-		<Card
-			siteName="CurseForge"
-			siteWingding="/curseforge.svg"
-			siteDescription="Repository of my mods on CurseForge"
-		/>
-	</div>
+	<Cards />
 	<FooterBar />
 
 	<!-- ToDo: Theme swapping & stripped down mobile reactivity, GitHub/Twitter?Insta? icons -->
