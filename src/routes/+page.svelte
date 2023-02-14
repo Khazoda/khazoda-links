@@ -29,5 +29,5 @@
 			siteDescription="Repository of my mods on CurseForge"
 		/>
 	</div>
-	ToDo: Theme swapping & stripped down mobile reactivity
+	ToDo: Theme swapping & stripped down mobile reactivity, GitHub/Twitter?Insta? icons
 </main>
