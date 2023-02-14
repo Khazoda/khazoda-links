@@ -21,7 +21,7 @@
 
 <MediaQuery query="(max-width: 499px)" let:matches>
 	{#if matches}
-		<div class="w-full px-6 ">
+		<div class="w-full px-6 mb-6">
 			<div
 				class="bubble-text w-full relative h-10 bg-sky-600 mobile-card rounded-2xl drop-shadow-lg rounded-t-none px-2 py-2 mt-2 flex flex-row items-center justify-center "
 			>
