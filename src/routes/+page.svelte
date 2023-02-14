@@ -29,4 +29,5 @@
 			siteDescription="Repository of my mods on CurseForge"
 		/>
 	</div>
+	ToDo: Theme swapping & stripped down mobile reactivity
 </main>
