@@ -11,7 +11,7 @@
 			<div
 				class="w-8 h-8 drop-shadow-lg hover:scale-105 hover:cursor-pointer transition-transform border-success hover:border-[1.5px] rounded-tr-2 rounded-full"
 			>
-				<a href="https://github.com/Khazoda" target="_blank" rel="noreferrer" class="w-8"
+				<a href="https://github.com/Khazoda" target="_blank" rel="noopener noreferrer" class="w-8"
 					><img src="/github_white.svg" alt="" />
 				</a>
 			</div>
@@ -26,7 +26,7 @@
 				class="bubble-text w-full relative h-10 bg-sky-600 mobile-card rounded-2xl drop-shadow-lg rounded-t-none px-2 py-2 mt-2 flex flex-row items-center justify-center "
 			>
 				<div class="w-8 h-8 drop-shadow-lg rounded-full">
-					<a href="https://github.com/Khazoda" target="_blank" rel="noreferrer" class="w-8"
+					<a href="https://github.com/Khazoda" target="_blank" rel="noopener noreferrer" class="w-8"
 						><img src="/github_white.svg" alt="" />
 					</a>
 				</div>

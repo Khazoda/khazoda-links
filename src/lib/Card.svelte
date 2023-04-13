@@ -25,7 +25,7 @@
 		<a
 			href={siteHref}
 			target="_blank"
-			rel="noreferrer"
+			rel="noopener noreferrer"
 			class="prose relative w-full h-16 mobile-card drop-shadow-lg px-2 py-2 flex flex-row items-center justify-start "
 		>
 			<img class="h-14 m-0" src={siteWingding} alt="" />
@@ -42,7 +42,7 @@
 		<a
 			href={siteHref}
 			target="_blank"
-			rel="noreferrer"
+			rel="noopener noreferrer"
 			id="card-wrapper"
 			class="card-grid drop-shadow-lg bg-[url('/card-bg.svg')] bg-no-repeat bg-cover outline-success rounded-none"
 		>
