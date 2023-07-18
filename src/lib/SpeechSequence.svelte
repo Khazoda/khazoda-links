@@ -30,7 +30,7 @@
 
 <MediaQuery query="(max-width: 499px)" let:matches>
 	{#if matches}
-		<img src="/junegoblin_big.png" class="w-32 mb-6" alt="" />
+		<img src="/avatar_round.png" class="w-32 mb-6" alt="" />
 		<div class="w-full px-6 ">
 			<div
 				class="bubble-text w-full relative h-10 bubble-text mobile-card rounded-2xl drop-shadow-lg rounded-b-none px-2 py-2 mb-2 flex flex-row items-center justify-start "
@@ -44,7 +44,7 @@
 		<div id="speech-wrapper" class="chat chat-start mt-6 mb-2 pt-0 pb-0 drop-shadow-xl">
 			<div id="speech-avatar" class="chat-image">
 				<div class="w-10 rounded-full shadow-xl">
-					<img alt="June's avatar" src="/junegoblin.png" />
+					<img alt="June's avatar" src="/junegoblin_corner.png" />
 				</div>
 			</div>
 			{#if visible}
