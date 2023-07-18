@@ -44,7 +44,7 @@
 		<div id="speech-wrapper" class="chat chat-start mt-6 mb-2 pt-0 pb-0 drop-shadow-xl">
 			<div id="speech-avatar" class="chat-image">
 				<div class="w-10 rounded-full shadow-xl">
-					<img alt="June's avatar" src="/junegoblin_corner.png" />
+					<img alt="June's avatar" src="/avatar_corner.png" />
 				</div>
 			</div>
 			{#if visible}
