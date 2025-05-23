@@ -141,9 +141,7 @@ document.addEventListener("DOMContentLoaded", function () {
     bubble.focus();
 
     // Play selection sound effect
-    playSelectSound().catch((err) =>
-      console.log("Sound playback failed:", err)
-    );
+    playSelectSound().catch((err) => console.log("Sound playback failed:", err));
   }
 
   function clearSelection() {
@@ -161,9 +159,7 @@ document.addEventListener("DOMContentLoaded", function () {
   document.addEventListener("keydown", function (event) {
     if (event.key === "Escape") {
       clearSelection();
-    } else if (
-      ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)
-    ) {
+    } else if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) {
       event.preventDefault();
       navigateGrid(event.key);
     }
@@ -189,18 +185,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
     switch (direction) {
       case "ArrowLeft":
-        newIndex =
-          currentIndex > 0 ? currentIndex - 1 : bubblesArray.length - 1;
+        newIndex = currentIndex > 0 ? currentIndex - 1 : bubblesArray.length - 1;
         break;
       case "ArrowRight":
-        newIndex =
-          currentIndex < bubblesArray.length - 1 ? currentIndex + 1 : 0;
+        newIndex = currentIndex < bubblesArray.length - 1 ? currentIndex + 1 : 0;
         break;
       case "ArrowUp":
         newIndex = currentIndex - cols;
-        if (newIndex < 0)
-          newIndex =
-            currentIndex + Math.floor((bubblesArray.length - 1) / cols) * cols;
+        if (newIndex < 0) newIndex = currentIndex + Math.floor((bubblesArray.length - 1) / cols) * cols;
         if (newIndex >= bubblesArray.length) newIndex -= cols;
         break;
       case "ArrowDown":

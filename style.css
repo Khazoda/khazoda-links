@@ -3,6 +3,7 @@ body {
   font-family: sans-serif;
   background: rgb(210, 200, 195);
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   height: 100svh;
@@ -16,7 +17,15 @@ body {
   image-rendering: crisp-edges;
 }
 
-.container {
+#gpu-container {
+}
+@media (max-width: 415px) {
+  #gpu-container {
+    display: none;
+  }
+}
+
+#links-container {
   display: flex;
   width: auto;
   margin: 1rem;

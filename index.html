@@ -10,10 +10,19 @@
     <link rel="preload" href="static/pointer.cur" as="image" />
     <link rel="preload" href="static/pointer_blue.cur" as="image" />
 
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.176.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.176.0/examples/jsm/"
+        }
+      }
+    </script>
     <script src="script.js"></script>
   </head>
   <body>
-    <div class="container">
+    <div id="gpu-container"></div>
+    <div id="links-container">
       <div id="links-grid">
         <a class="bubble" href="https://github.com/" target="_blank" rel="noopener noreferrer">
           <div class="icon"><img src="/static/github.png" alt="github" /></div>
@@ -91,5 +100,6 @@
         <a class="bubble" href="#" target="_blank" rel="noopener noreferrer"> </a>
       </div>
     </div>
+    <script type="module" src="gpu_stuff.js"></script>
   </body>
 </html>
