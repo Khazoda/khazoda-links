@@ -1,78 +1,105 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title>June's Links</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <div class="container">
-        <div id="links-grid">
-            <a class="bubble" href="https://github.com/" target="_blank" rel="noopener noreferrer">
-                <div class="icon"><img src="/static/github.png" alt="github"></div>
-            </a>
-            <a class="bubble" href="https://khazoda.com" target="_blank" rel="noopener noreferrer">
-                <div class="icon"><img src="/static/khazoda.png" alt="khazoda.com"></div>
-            </a>
-            <a class="bubble" href="https://junefaleiro.com" target="_blank" rel="noopener noreferrer">
-                <div class="icon"><img src="/static/junefaleiro.png" alt="junefaleiro.com" class="pixelated"></div>
-            </a>
-            <a class="bubble" href="https://github.com/khazoda" target="_blank" rel="noopener noreferrer">
-                <div class="icon"><img src="/static/github.png" alt="github.com/khazoda"></div>
-            </a>
-            <a class="bubble" href="https://linkedin.com/in/junef" target="_blank" rel="noopener noreferrer">
-                <div class="icon"><img src="/static/linkedin.png" alt="linkedin.com/in/junef"></div>
-            </a>
-            <a class="bubble" href="https://modrinth.com/user/june" target="_blank" rel="noopener noreferrer">
-                <div class="icon"><img src="/static/modrinth.png" alt="modrinth.com/user/june"></div>
-            </a>
-            <a class="bubble" href="https://curseforge.com/members/khazoda/projects" target="_blank" rel="noopener noreferrer">
-                <div class="icon"><img src="/static/curseforge.png" alt="curseforge.com/members/khazoda/projects"></div>
-            </a>
-            <a class="bubble" href="https://khazoda.com/basicweapons/materialpacks" target="_blank" rel="noopener noreferrer">
-                <div class="icon"><img src="/static/materialpack.png" alt="khazoda.com/basicweapons/materialpacks"></div>
-            </a>
-            <a class="bubble" href="https://chromewebstore.google.com/detail/sleek-new-tab/cihhogbfacooijaegidojdlfdipebmpg" target="_blank" rel="noopener noreferrer">
-                <div class="icon"><img src="/static/sleeknewtab.png" alt="chromewebstore.google.com/detail/sleek-new-tab/cihhogbfacooijaegidojdlfdipebmpg"></div>
-            </a>
-            <a class="bubble" href="https://seacroak.com" target="_blank" rel="noopener noreferrer">
-                <div class="icon"><img src="/static/seacroak.png" alt="seacroak.com"></div>
-            </a>
-            <a class="bubble" href="https://froggyvibe.seacroak.com/" target="_blank" rel="noopener noreferrer">
-                <div class="icon"><img src="/static/froggyvibe.png" alt="froggyvibe.seacroak.com"></div>
-            </a>
-            <a class="bubble" href="https://bsky.app/profile/khazoda.com" target="_blank" rel="noopener noreferrer">
-                <div class="icon"><img src="/static/bluesky.png" alt="bsky.app/profile/khazoda.com"></div>
-            </a>
-            <a class="bubble" href="#" target="_blank" rel="noopener noreferrer">
-            </a>
-            <a class="bubble" href="#" target="_blank" rel="noopener noreferrer">
-            </a>
-            <a class="bubble" href="#" target="_blank" rel="noopener noreferrer">
-            </a>
-            <a class="bubble" href="#" target="_blank" rel="noopener noreferrer">
-            </a>
-            <a class="bubble" href="#" target="_blank" rel="noopener noreferrer">
-            </a>
-            <a class="bubble" href="#" target="_blank" rel="noopener noreferrer">
-            </a>
-            <a class="bubble" href="#" target="_blank" rel="noopener noreferrer">
-            </a>
-            <a class="bubble" href="#" target="_blank" rel="noopener noreferrer">
-            </a>
-            <a class="bubble" href="#" target="_blank" rel="noopener noreferrer">
-            </a>
-            <a class="bubble" href="#" target="_blank" rel="noopener noreferrer">
-            </a>
-            <a class="bubble" href="#" target="_blank" rel="noopener noreferrer">
-            </a>
-            <a class="bubble" href="#" target="_blank" rel="noopener noreferrer">
-            </a>
+    <link rel="stylesheet" href="style.css" />
 
- 
-        </div>
+    <link rel="preload" href="static/pointer.cur" as="image" />
+    <link rel="preload" href="static/pointer_blue.cur" as="image" />
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.176.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.176.0/examples/jsm/"
+        }
+      }
+    </script>
+    <script src="script.js"></script>
+  </head>
+  <body>
+    <div id="gpu-container"></div>
+    <div id="links-container">
+      <div id="links-grid">
+        <a class="bubble" href="https://github.com/" target="_blank" rel="noopener noreferrer">
+          <div class="icon"><img src="/static/github.png" alt="github" /></div>
+        </a>
+        <a class="bubble" href="https://khazoda.com" target="_blank" rel="noopener noreferrer">
+          <div class="icon">
+            <img src="/static/khazoda.png" alt="khazoda.com" />
+          </div>
+        </a>
+        <a class="bubble" href="https://junefaleiro.com" target="_blank" rel="noopener noreferrer">
+          <div class="icon">
+            <img src="/static/junefaleiro.png" alt="junefaleiro.com" class="pixelated" />
+          </div>
+        </a>
+        <a class="bubble" href="https://github.com/khazoda" target="_blank" rel="noopener noreferrer">
+          <div class="icon">
+            <img src="/static/github.png" alt="github.com/khazoda" />
+          </div>
+        </a>
+        <a class="bubble" href="https://linkedin.com/in/junef" target="_blank" rel="noopener noreferrer">
+          <div class="icon">
+            <img src="/static/linkedin.png" alt="linkedin.com/in/junef" />
+          </div>
+        </a>
+        <a class="bubble" href="https://modrinth.com/user/june" target="_blank" rel="noopener noreferrer">
+          <div class="icon">
+            <img src="/static/modrinth.png" alt="modrinth.com/user/june" />
+          </div>
+        </a>
+        <a class="bubble" href="https://curseforge.com/members/khazoda/projects" target="_blank" rel="noopener noreferrer">
+          <div class="icon">
+            <img src="/static/curseforge.png" alt="curseforge.com/members/khazoda/projects" />
+          </div>
+        </a>
+        <a class="bubble" href="https://khazoda.com/basicweapons/materialpacks" target="_blank" rel="noopener noreferrer">
+          <div class="icon">
+            <img src="/static/materialpack.png" alt="khazoda.com/basicweapons/materialpacks" />
+          </div>
+        </a>
+        <a
+          class="bubble"
+          href="https://chromewebstore.google.com/detail/sleek-new-tab/cihhogbfacooijaegidojdlfdipebmpg"
+          target="_blank"
+          rel="noopener noreferrer">
+          <div class="icon">
+            <img src="/static/sleeknewtab.png" alt="chromewebstore.google.com/detail/sleek-new-tab/cihhogbfacooijaegidojdlfdipebmpg" />
+          </div>
+        </a>
+        <a class="bubble" href="https://seacroak.com" target="_blank" rel="noopener noreferrer">
+          <div class="icon">
+            <img src="/static/seacroak.png" alt="seacroak.com" />
+          </div>
+        </a>
+        <a class="bubble" href="https://froggyvibe.seacroak.com/" target="_blank" rel="noopener noreferrer">
+          <div class="icon">
+            <img src="/static/froggyvibe.png" alt="froggyvibe.seacroak.com" />
+          </div>
+        </a>
+        <a class="bubble" href="https://bsky.app/profile/khazoda.com" target="_blank" rel="noopener noreferrer">
+          <div class="icon">
+            <img src="/static/bluesky.png" alt="bsky.app/profile/khazoda.com" />
+          </div>
+        </a>
+        <a class="bubble" href="#" target="_blank" rel="noopener noreferrer"> </a>
+        <a class="bubble" href="#" target="_blank" rel="noopener noreferrer"> </a>
+        <a class="bubble" href="#" target="_blank" rel="noopener noreferrer"> </a>
+        <a class="bubble" href="#" target="_blank" rel="noopener noreferrer"> </a>
+        <a class="bubble" href="#" target="_blank" rel="noopener noreferrer"> </a>
+        <a class="bubble" href="#" target="_blank" rel="noopener noreferrer"> </a>
+        <a class="bubble" href="#" target="_blank" rel="noopener noreferrer"> </a>
+        <a class="bubble" href="#" target="_blank" rel="noopener noreferrer"> </a>
+        <a class="bubble" href="#" target="_blank" rel="noopener noreferrer"> </a>
+        <a class="bubble" href="#" target="_blank" rel="noopener noreferrer"> </a>
+        <a class="bubble" href="#" target="_blank" rel="noopener noreferrer"> </a>
+        <a class="bubble" href="#" target="_blank" rel="noopener noreferrer"> </a>
+      </div>
     </div>
-</body>
+    <script type="module" src="gpu_stuff.js"></script>
+  </body>
 </html>

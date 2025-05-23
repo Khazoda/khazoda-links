@@ -3,9 +3,11 @@ body {
   font-family: sans-serif;
   background: rgb(210, 200, 195);
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   height: 100svh;
+  cursor: url("static/pointer.cur"), auto;
 }
 
 .pixelated {
@@ -15,7 +17,15 @@ body {
   image-rendering: crisp-edges;
 }
 
-.container {
+#gpu-container {
+}
+@media (max-width: 415px) {
+  #gpu-container {
+    display: none;
+  }
+}
+
+#links-container {
   display: flex;
   width: auto;
   margin: 1rem;
@@ -88,37 +98,50 @@ body {
   text-decoration: none;
   color: #222;
   position: relative;
-  transition: transform 0.035s ease-out, box-shadow 0.035s ease-out;
+  transition: transform 0.1s ease-out, box-shadow 0.1s ease-out, outline 0.1s ease-out;
   will-change: transform;
+
+  /* Disable dragging and text selection */
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+  user-drag: none;
 }
+
 /* Pop Out */
 .bubble:has(div):hover {
   transform: scale(1.05) translateY(-2px);
   box-shadow: 0 3px 5px 0 rgba(0, 0, 0, 0.225);
 }
+
 /* Press In */
 .bubble:has(div):active {
   transform: scale(0.95) translateY(2px);
   box-shadow: 0 0 3px 0 rgba(0, 0, 0, 0.15);
 }
+
 /* Focus Outline */
 .bubble:has(div):focus {
-  outline: 5px solid #52C66F;
-  box-shadow:
-    0 0 0 4px rgba(0, 0, 0, 0.1),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.3),
-    0 4px 8px 2px rgba(82, 198, 111, 0.65),
+  outline: 5px solid #52c66f;
+  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.3), 0 4px 8px 2px rgba(82, 198, 111, 0.65),
     0 8px 16px 0 rgba(82, 198, 111, 0.45);
+  cursor: url("static/pointer_blue.cur"), pointer !important;
 }
+
 /* Focus Outline Shine */
 .bubble:has(div):focus::before {
   content: "";
   position: absolute;
-  top:-4px;
-  left:4px;
+  top: -4px;
+  left: 4px;
   width: 20px;
   height: 2px;
-  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,1) 0%, rgba(255,255,255,0.4) 60%, transparent 100%);
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.4) 60%, transparent 100%);
   pointer-events: none;
   /* background:blue; */
   overflow: hidden;
@@ -134,13 +157,9 @@ body {
   width: 100%;
   height: 100%;
   border-radius: 10px;
-  background: linear-gradient(
-    200deg,
-    rgba(255, 251, 185, 0.25) 0%,
-    transparent 30%,
-    rgba(0, 0, 0, 0.025) 80%
-  );
+  background: linear-gradient(200deg, rgba(255, 251, 185, 0.25) 0%, transparent 30%, rgba(0, 0, 0, 0.025) 80%);
 }
+
 /* Inner Icon */
 .bubble .icon {
   width: 45px;
@@ -148,6 +167,26 @@ body {
   border-radius: 5px;
   overflow: hidden;
   box-shadow: inset 0 1px 5px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* Best I can do for fixing image hover blurriness on 1080p and lower resolution displays */
+.bubble .icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+
+  /* Disable image dragging */
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+  user-drag: none;
+  pointer-events: none;
 }
 
 /* Empty Bubble */
@@ -158,6 +197,7 @@ body {
   cursor: default;
   pointer-events: none;
 }
+
 .bubble:not(:has(div))::after {
   content: "";
   position: absolute;
