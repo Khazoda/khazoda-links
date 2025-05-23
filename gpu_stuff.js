@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 const containerRef = document.getElementById("gpu-container");
 const linksContainerRef = document.getElementById("links-container");
@@ -19,6 +20,18 @@ function initScene() {
   renderer.setClearColor(0x000000, 0);
   renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
   containerRef.appendChild(renderer.domElement);
+
+  // Add lighting for GLTF models
+  const ambientLight = new THREE.AmbientLight(0xffffff, 2);
+  scene.add(ambientLight);
+
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
+  directionalLight.position.set(5, 5, 5);
+  scene.add(directionalLight);
+
+  const directionalLight2 = new THREE.DirectionalLight(0xffffff, 1);
+  directionalLight2.position.set(-5, -5, 5);
+  scene.add(directionalLight2);
 
   let currentModel = null;
 
@@ -173,62 +186,157 @@ function initScene() {
     });
   }
 
+  function loadGLTFModel(modelPath) {
+    return new Promise((resolve, reject) => {
+      const loader = new GLTFLoader();
+
+      loader.load(
+        modelPath,
+        (gltf) => {
+          const model = gltf.scene;
+
+          // Create a group to properly handle pivot issues
+          const group = new THREE.Group();
+
+          // Scale and center the model appropriately
+          const box = new THREE.Box3().setFromObject(model);
+          const center = box.getCenter(new THREE.Vector3());
+          const size = box.getSize(new THREE.Vector3());
+          const maxDimension = Math.max(size.x, size.y, size.z);
+          const scale = 1 / maxDimension;
+          model.scale.setScalar(scale);
+
+          // Center the model within the group
+          model.position.sub(center.multiplyScalar(scale));
+
+          // Rotate model 180 degrees around Y axis as gltfs are loaded backwards
+          model.rotation.y = Math.PI;
+
+          group.add(model);
+
+          resolve(group);
+        },
+        (progress) => {},
+        (error) => {
+          console.error("Error loading GLTF model:", error);
+          reject(error);
+        }
+      );
+    });
+  }
+
   let isVisible = false;
   let targetScale = 0;
   let currentScale = 0;
+  let rotationSpeed = 0.005;
+
+  // Simple easing function
+  function easeOut(t) {
+    return 1 - (1 - t) * (1 - t) * (1 - t);
+  }
 
   function animate() {
     requestAnimationFrame(animate);
     const time = Date.now() * 0.001;
 
-    currentScale += (targetScale - currentScale) * 0.1;
+    // Smooth scale transition with easing
+    const scaleDiff = targetScale - currentScale;
+    const easingSpeed = Math.abs(scaleDiff) > 0.1 ? 0.08 : 0.05;
+    currentScale += scaleDiff * easeOut(easingSpeed);
 
     if (currentModel) {
       currentModel.scale.setScalar(currentScale);
 
       if (isVisible) {
-        currentModel.rotation.x = Math.sin(time * 0.5) * 0.1;
-        currentModel.rotation.y += 0.01;
-        currentModel.rotation.z = Math.cos(time * 0.7) * 0.05;
+        // Get current Y rotation to determine camera facing
+        const normalizedY = ((currentModel.rotation.y % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+
+        // Calculate speed based on angle - gradual transition using cosine
+        // When facing camera (0 or 2π), cos = 1, when back to camera (π), cos = -1
+        const facingFactor = Math.cos(normalizedY);
+        // Map from [-1, 1] to [0.007, 0.002] - slow when facing, fast when back is turned
+        const targetSpeed = 0.0045 + facingFactor * -0.0025;
+
+        // Very smooth speed transition
+        rotationSpeed += (targetSpeed - rotationSpeed) * 0.03;
+
+        // Enhanced pitch with multiple wave layers
+        currentModel.rotation.x = Math.sin(time * 0.3) * 0.06 + Math.cos(time * 0.8) * 0.03 + Math.sin(time * 1.2) * 0.015;
+
+        // Main rotation with smooth speed and subtle variation
+        currentModel.rotation.y += rotationSpeed + Math.sin(time * 0.4) * 0.0005;
+
+        // Enhanced roll with multiple wave layers
+        currentModel.rotation.z = Math.cos(time * 0.5) * 0.035 + Math.sin(time * 0.9) * 0.02 + Math.cos(time * 1.1) * 0.01;
       }
     }
 
     renderer.render(scene, camera);
   }
 
-  async function showFavicon(imagePath = "static/bluesky.png") {
+  async function showModel(modelPath = "static/bluesky.png") {
+    let currentRotation = currentModel?.rotation || { x: 0, y: 0, z: 0 };
+
     if (currentModel) {
       scene.remove(currentModel);
-      currentModel.geometry?.dispose();
-      currentModel.material?.dispose();
+      if (currentModel.geometry?.dispose) {
+        currentModel.geometry.dispose();
+      }
+      if (currentModel.material?.dispose) {
+        currentModel.material.dispose();
+      }
+      // Clean up GLTF models
+      if (currentModel.traverse) {
+        currentModel.traverse((child) => {
+          if (child.geometry) child.geometry.dispose();
+          if (child.material) {
+            if (Array.isArray(child.material)) {
+              child.material.forEach((material) => material.dispose());
+            } else {
+              child.material.dispose();
+            }
+          }
+        });
+      }
     }
 
     try {
-      const geometry = await createGeometryFromImage(imagePath);
+      // Determine file type and handle accordingly
+      const isGLTF = modelPath.toLowerCase().endsWith(".gltf") || modelPath.toLowerCase().endsWith(".glb");
 
-      const material = new THREE.MeshBasicMaterial({
-        vertexColors: true,
-        transparent: false,
-      });
-
-      currentModel = new THREE.Mesh(geometry, material);
-      scene.add(currentModel);
+      if (isGLTF) {
+        // Load GLTF model
+        currentModel = await loadGLTFModel(modelPath);
+        scene.add(currentModel);
+      } else {
+        // Handle PNG files (convert to cube geometry)
+        const geometry = await createGeometryFromImage(modelPath);
+        const material = new THREE.MeshBasicMaterial({
+          vertexColors: true,
+          transparent: false,
+        });
+        currentModel = new THREE.Mesh(geometry, material);
+        scene.add(currentModel);
+      }
 
       isVisible = true;
-      targetScale = 1;
+      targetScale = isGLTF ? 7 : 1; // Bigger scale only for GLTF models
+      currentScale = 0; // Start from 0 to animate scale-in
+      currentModel.rotation.set(currentRotation.x, currentRotation.y, currentRotation.z);
+      rotationSpeed = 0.005; // Reset rotation speed for smooth start
     } catch (error) {
-      console.error("Failed to create 3D favicon:", error);
+      console.error("Failed to create 3D model:", error);
     }
   }
 
-  function hideFavicon() {
+  function hideModel() {
     isVisible = false;
     targetScale = 0;
   }
 
   window.faviconDisplay = {
-    show: showFavicon,
-    hide: hideFavicon,
+    show: showModel,
+    hide: hideModel,
   };
 
   animate();

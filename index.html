@@ -18,74 +18,100 @@
         }
       }
     </script>
+    <noscript>
+      <style>
+        /* Make cursor blue on hover when JS is disabled */
+        .bubble {
+          cursor: url(static/pointer_blue.cur), auto !important;
+        }
+        /* Hide empty bubbles when JS is disabled */
+        .bubble:not(:has(div)) {
+          display: none;
+        }
+      </style>
+    </noscript>
     <script src="script.js"></script>
   </head>
   <body>
     <div id="gpu-container"></div>
     <div id="links-container">
       <div id="links-grid">
-        <a class="bubble" href="https://github.com/" target="_blank" rel="noopener noreferrer">
-          <div class="icon"><img src="/static/github.png" alt="github" /></div>
-        </a>
-        <a class="bubble" href="https://khazoda.com" target="_blank" rel="noopener noreferrer">
+        <!-- Static fallback links that work without JavaScript -->
+        <!-- These will be enhanced by JS when available -->
+        <a class="bubble" href="https://khazoda.com" target="_blank" rel="noopener noreferrer" data-site-key="khazoda">
           <div class="icon">
-            <img src="/static/khazoda.png" alt="khazoda.com" />
+            <img src="/static/links/khazoda.png" alt="khazoda.com" />
           </div>
         </a>
-        <a class="bubble" href="https://junefaleiro.com" target="_blank" rel="noopener noreferrer">
+        <a class="bubble" href="https://junefaleiro.com" target="_blank" rel="noopener noreferrer" data-site-key="junefaleiro">
           <div class="icon">
-            <img src="/static/junefaleiro.png" alt="junefaleiro.com" class="pixelated" />
+            <img src="/static/links/junefaleiro.png" alt="junefaleiro.com" class="pixelated" />
           </div>
         </a>
-        <a class="bubble" href="https://github.com/khazoda" target="_blank" rel="noopener noreferrer">
+        <a class="bubble" href="https://seacroak.com" target="_blank" rel="noopener noreferrer" data-site-key="seacroak">
           <div class="icon">
-            <img src="/static/github.png" alt="github.com/khazoda" />
+            <img src="/static/links/seacroak.png" alt="seacroak.com" />
           </div>
         </a>
-        <a class="bubble" href="https://linkedin.com/in/junef" target="_blank" rel="noopener noreferrer">
+        <a class="bubble" href="https://github.com/khazoda" target="_blank" rel="noopener noreferrer" data-site-key="github">
           <div class="icon">
-            <img src="/static/linkedin.png" alt="linkedin.com/in/junef" />
+            <img src="/static/links/github.png" alt="github.com/khazoda" />
           </div>
         </a>
-        <a class="bubble" href="https://modrinth.com/user/june" target="_blank" rel="noopener noreferrer">
+        <a class="bubble" href="https://linkedin.com/in/junef" target="_blank" rel="noopener noreferrer" data-site-key="linkedin">
           <div class="icon">
-            <img src="/static/modrinth.png" alt="modrinth.com/user/june" />
+            <img src="/static/links/linkedin.png" alt="linkedin.com/in/junef" />
           </div>
         </a>
-        <a class="bubble" href="https://curseforge.com/members/khazoda/projects" target="_blank" rel="noopener noreferrer">
+        <a class="bubble" href="https://bsky.app/profile/khazoda.com" target="_blank" rel="noopener noreferrer" data-site-key="bluesky">
           <div class="icon">
-            <img src="/static/curseforge.png" alt="curseforge.com/members/khazoda/projects" />
+            <img src="/static/links/bluesky.png" alt="bsky.app/profile/khazoda.com" />
           </div>
         </a>
-        <a class="bubble" href="https://khazoda.com/basicweapons/materialpacks" target="_blank" rel="noopener noreferrer">
+        <a class="bubble" href="https://modrinth.com/user/june" target="_blank" rel="noopener noreferrer" data-site-key="modrinth">
           <div class="icon">
-            <img src="/static/materialpack.png" alt="khazoda.com/basicweapons/materialpacks" />
+            <img src="/static/links/modrinth.png" alt="modrinth.com/user/june" />
+          </div>
+        </a>
+        <a
+          class="bubble"
+          href="https://curseforge.com/members/khazoda/projects"
+          target="_blank"
+          rel="noopener noreferrer"
+          data-site-key="curseforge">
+          <div class="icon">
+            <img src="/static/links/curseforge.png" alt="curseforge.com/members/khazoda/projects" />
+          </div>
+        </a>
+        <a
+          class="bubble"
+          href="https://khazoda.com/basicweapons/materialpacks"
+          target="_blank"
+          rel="noopener noreferrer"
+          data-site-key="materialpack">
+          <div class="icon">
+            <img src="/static/links/materialpack.png" alt="khazoda.com/basicweapons/materialpacks" />
           </div>
         </a>
         <a
           class="bubble"
           href="https://chromewebstore.google.com/detail/sleek-new-tab/cihhogbfacooijaegidojdlfdipebmpg"
           target="_blank"
-          rel="noopener noreferrer">
+          rel="noopener noreferrer"
+          data-site-key="sleek_new_tab">
           <div class="icon">
-            <img src="/static/sleeknewtab.png" alt="chromewebstore.google.com/detail/sleek-new-tab/cihhogbfacooijaegidojdlfdipebmpg" />
+            <img
+              src="/static/links/sleek_new_tab.png"
+              alt="chromewebstore.google.com/detail/sleek-new-tab/cihhogbfacooijaegidojdlfdipebmpg" />
           </div>
         </a>
-        <a class="bubble" href="https://seacroak.com" target="_blank" rel="noopener noreferrer">
+        <a class="bubble" href="https://froggyvibe.seacroak.com/" target="_blank" rel="noopener noreferrer" data-site-key="froggyvibe">
           <div class="icon">
-            <img src="/static/seacroak.png" alt="seacroak.com" />
+            <img src="/static/links/froggyvibe.png" alt="froggyvibe.seacroak.com" />
           </div>
         </a>
-        <a class="bubble" href="https://froggyvibe.seacroak.com/" target="_blank" rel="noopener noreferrer">
-          <div class="icon">
-            <img src="/static/froggyvibe.png" alt="froggyvibe.seacroak.com" />
-          </div>
-        </a>
-        <a class="bubble" href="https://bsky.app/profile/khazoda.com" target="_blank" rel="noopener noreferrer">
-          <div class="icon">
-            <img src="/static/bluesky.png" alt="bsky.app/profile/khazoda.com" />
-          </div>
-        </a>
+        <!-- Empty bubbles for grid layout - hidden without JS -->
+        <a class="bubble" href="#" target="_blank" rel="noopener noreferrer"> </a>
         <a class="bubble" href="#" target="_blank" rel="noopener noreferrer"> </a>
         <a class="bubble" href="#" target="_blank" rel="noopener noreferrer"> </a>
         <a class="bubble" href="#" target="_blank" rel="noopener noreferrer"> </a>

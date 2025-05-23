@@ -1,158 +1,90 @@
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", async function () {
   let selectedBubble = null;
   let clickTimeout = null;
   let audioContext = null;
-
-  // Audio Context
-  function initAudioContext() {
-    if (!audioContext) {
-      audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    return audioContext;
-  }
-
-  // Cache for selection sound
   let selectSoundBuffer = null;
-  let soundLoadingPromise = null;
+  let siteData = {};
 
-  // Load and cache selection sound from file
-  async function cacheSelectSound() {
-    if (selectSoundBuffer) return;
-    if (soundLoadingPromise) return soundLoadingPromise;
-
-    // Start loading
-    soundLoadingPromise = (async () => {
-      try {
-        const ctx = initAudioContext();
-
-        // Fetch the audio file
-        const response = await fetch("static/ui_select.ogg");
-        const arrayBuffer = await response.arrayBuffer();
-
-        // Decode the audio data
-        selectSoundBuffer = await ctx.decodeAudioData(arrayBuffer);
-      } catch (err) {
-        console.log("Failed to load select sound:", err);
-      } finally {
-        soundLoadingPromise = null;
-      }
-    })();
-
-    return soundLoadingPromise;
+  // Load site data and initialize
+  try {
+    const response = await fetch("SITELIST.json");
+    siteData = await response.json();
+  } catch (error) {
+    console.error("Failed to load site data:", error);
   }
 
-  // Play cached selection sound
+  // Audio setup
   async function playSelectSound() {
     try {
-      const ctx = initAudioContext();
+      if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioContext.state === "suspended") await audioContext.resume();
 
-      // Resume audio context on first user interaction
-      if (ctx.state === "suspended") {
-        await ctx.resume();
-      }
-
-      // Cache sound if not already cached
       if (!selectSoundBuffer) {
-        await cacheSelectSound();
+        const response = await fetch("static/ui_select.ogg");
+        const arrayBuffer = await response.arrayBuffer();
+        selectSoundBuffer = await audioContext.decodeAudioData(arrayBuffer);
       }
 
-      // If still no buffer, skip
-      if (!selectSoundBuffer) return;
-
-      const source = ctx.createBufferSource();
-      const gainNode = ctx.createGain();
-
+      const source = audioContext.createBufferSource();
+      const gainNode = audioContext.createGain();
       source.buffer = selectSoundBuffer;
-      gainNode.gain.value = 0.8; // Set volume to 80%
-
+      gainNode.gain.value = 0.8;
       source.connect(gainNode);
-      gainNode.connect(ctx.destination);
+      gainNode.connect(audioContext.destination);
       source.start();
     } catch (err) {
       console.log("Audio playback failed:", err);
     }
   }
 
-  // Get all bubbles that have content
-  const bubbles = document.querySelectorAll(".bubble:has(div)");
+  // Get site key from bubble
+  function getSiteKey(bubble) {
+    if (bubble.dataset.siteKey) return bubble.dataset.siteKey;
 
-  bubbles.forEach((bubble) => {
-    // Store the original href
-    const originalHref = bubble.href;
-
-    // Keep href for accessibility and default keyboard navigation
-    bubble.style.cursor = "inherit";
-
-    bubble.addEventListener("click", function (event) {
-      // Prevent default link behavior
-      event.preventDefault();
-
-      // Clear any existing timeout
-      if (clickTimeout) {
-        clearTimeout(clickTimeout);
-        clickTimeout = null;
-      }
-
-      // If this bubble is already selected, open the link
-      if (selectedBubble === this) {
-        // Second click - open the link
-        if (originalHref && originalHref !== "#") {
-          window.open(originalHref, "_blank", "noopener,noreferrer");
+    const href = bubble.href || bubble.dataset.href;
+    if (href) {
+      const cleanUrl = href.replace(/^https?:\/\//, "");
+      for (const [key, url] of Object.entries(siteData)) {
+        if (cleanUrl.includes(url) || url.includes(cleanUrl.split("/")[0])) {
+          return key;
         }
-        // Clear selection after opening
-        clearSelection();
-        return;
       }
-
-      // First click - select this bubble
-      clearSelection();
-      selectBubble(this);
-
-      // Auto-deselect after 5 seconds if no second click
-      clickTimeout = setTimeout(() => {
-        clearSelection();
-        clickTimeout = null;
-      }, 5000);
-    });
-
-    // Store the original href for later use
-    bubble.dataset.href = originalHref;
-  });
-
-  // Clear selection when clicking elsewhere
-  document.addEventListener("click", function (event) {
-    if (!event.target.closest(".bubble:has(div)")) {
-      clearSelection();
     }
-  });
-
-  // Initialize audio on first user interaction
-  function ensureAudioInit() {
-    initAudioContext();
-    document.removeEventListener("click", ensureAudioInit);
-    document.removeEventListener("keydown", ensureAudioInit);
+    return null;
   }
 
-  document.addEventListener("click", ensureAudioInit, { once: true });
-  document.addEventListener("keydown", ensureAudioInit, { once: true });
+  // Check if 3D model exists and get appropriate path
+  async function getModelPath(siteKey) {
+    try {
+      const modelPath = `/static/links/${siteKey}_model.gltf`;
+      const response = await fetch(modelPath, { method: "HEAD" });
+      return response.ok ? modelPath : `/static/links/${siteKey}.png`;
+    } catch {
+      return `/static/links/${siteKey}.png`;
+    }
+  }
 
-  function selectBubble(bubble) {
+  // Select bubble and show 3D model
+  async function selectBubble(bubble) {
     selectedBubble = bubble;
     bubble.focus();
+    playSelectSound();
 
-    // Play selection sound effect
-    playSelectSound().catch((err) => console.log("Sound playback failed:", err));
-
-    // Show 3D favicon if available
     const iconImg = bubble.querySelector(".icon img");
     if (iconImg && window.faviconDisplay) {
-      const faviconPath = iconImg.src;
-      // Convert to relative path if it's an absolute URL
-      const relativePath = faviconPath.includes("/static/") ? faviconPath.substring(faviconPath.indexOf("/static/") + 1) : faviconPath;
-      window.faviconDisplay.show(relativePath);
+      const siteKey = getSiteKey(bubble);
+      if (siteKey) {
+        const modelPath = await getModelPath(siteKey);
+        window.faviconDisplay.show(modelPath);
+      } else {
+        const faviconPath = iconImg.src;
+        const relativePath = faviconPath.includes("/static/") ? faviconPath.substring(faviconPath.indexOf("/static/") + 1) : faviconPath;
+        window.faviconDisplay.show(relativePath);
+      }
     }
   }
 
+  // Clear selection
   function clearSelection() {
     if (selectedBubble) {
       selectedBubble.blur();
@@ -162,39 +94,49 @@ document.addEventListener("DOMContentLoaded", function () {
       clearTimeout(clickTimeout);
       clickTimeout = null;
     }
-
-    // Hide 3D favicon
-    if (window.faviconDisplay) {
-      window.faviconDisplay.hide();
-    }
+    if (window.faviconDisplay) window.faviconDisplay.hide();
   }
 
-  // Arrow key navigation
-  document.addEventListener("keydown", function (event) {
-    if (event.key === "Escape") {
-      clearSelection();
-    } else if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) {
-      event.preventDefault();
-      navigateGrid(event.key);
-    }
-  });
+  // Handle bubble clicks
+  function handleBubbleClick(event) {
+    event.preventDefault();
+    const bubble = this;
 
+    if (clickTimeout) {
+      clearTimeout(clickTimeout);
+      clickTimeout = null;
+    }
+
+    if (selectedBubble === bubble) {
+      // Second click - open link
+      const href = bubble.href || bubble.dataset.href;
+      if (href && href !== "#") window.open(href, "_blank", "noopener,noreferrer");
+      clearSelection();
+      return;
+    }
+
+    // First click - select bubble
+    clearSelection();
+    selectBubble(bubble);
+    clickTimeout = setTimeout(() => {
+      clearSelection();
+      clickTimeout = null;
+    }, 5000);
+  }
+
+  // Grid navigation
   function navigateGrid(direction) {
-    const focused = document.activeElement;
+    const bubbles = document.querySelectorAll(".bubble:has(div)");
     const bubblesArray = Array.from(bubbles);
-    const currentIndex = bubblesArray.indexOf(focused);
+    const currentIndex = bubblesArray.indexOf(document.activeElement);
 
     if (currentIndex === -1) {
-      if (bubblesArray[0]) {
-        selectBubble(bubblesArray[0]);
-      }
+      if (bubblesArray[0]) selectBubble(bubblesArray[0]);
       return;
     }
 
     const gridElement = document.getElementById("links-grid");
-    const style = getComputedStyle(gridElement);
-    const cols = style.gridTemplateColumns.split(" ").length;
-
+    const cols = getComputedStyle(gridElement).gridTemplateColumns.split(" ").length;
     let newIndex = currentIndex;
 
     switch (direction) {
@@ -221,4 +163,33 @@ document.addEventListener("DOMContentLoaded", function () {
       selectBubble(newElement);
     }
   }
+
+  // Event listeners
+  document.querySelectorAll(".bubble:has(div)").forEach((bubble) => {
+    bubble.style.cursor = "inherit";
+    bubble.addEventListener("click", handleBubbleClick);
+    bubble.dataset.href = bubble.href;
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!event.target.closest(".bubble:has(div)")) clearSelection();
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      clearSelection();
+    } else if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) {
+      event.preventDefault();
+      navigateGrid(event.key);
+    }
+  });
+
+  // Initialize audio context on first interaction
+  document.addEventListener(
+    "click",
+    () => {
+      if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    },
+    { once: true }
+  );
 });
