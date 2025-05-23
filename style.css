@@ -6,6 +6,7 @@ body {
   justify-content: center;
   align-items: center;
   height: 100svh;
+  cursor: url("static/pointer.cur"), auto;
 }
 
 .pixelated {
@@ -88,37 +89,47 @@ body {
   text-decoration: none;
   color: #222;
   position: relative;
-  transition: transform 0.035s ease-out, box-shadow 0.035s ease-out;
+  transition: transform 0.1s ease-out, box-shadow 0.1s ease-out,
+    outline 0.1s ease-out;
   will-change: transform;
 }
+
 /* Pop Out */
 .bubble:has(div):hover {
   transform: scale(1.05) translateY(-2px);
   box-shadow: 0 3px 5px 0 rgba(0, 0, 0, 0.225);
 }
+
 /* Press In */
 .bubble:has(div):active {
   transform: scale(0.95) translateY(2px);
   box-shadow: 0 0 3px 0 rgba(0, 0, 0, 0.15);
 }
+
 /* Focus Outline */
 .bubble:has(div):focus {
-  outline: 5px solid #52C66F;
-  box-shadow:
-    0 0 0 4px rgba(0, 0, 0, 0.1),
+  outline: 5px solid #52c66f;
+  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.1),
     inset 0 0 0 1px rgba(255, 255, 255, 0.3),
     0 4px 8px 2px rgba(82, 198, 111, 0.65),
     0 8px 16px 0 rgba(82, 198, 111, 0.45);
+  cursor: url("static/pointer_blue.cur"), pointer !important;
 }
+
 /* Focus Outline Shine */
 .bubble:has(div):focus::before {
   content: "";
   position: absolute;
-  top:-4px;
-  left:4px;
+  top: -4px;
+  left: 4px;
   width: 20px;
   height: 2px;
-  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,1) 0%, rgba(255,255,255,0.4) 60%, transparent 100%);
+  background: radial-gradient(
+    circle at 30% 30%,
+    rgba(255, 255, 255, 1) 0%,
+    rgba(255, 255, 255, 0.4) 60%,
+    transparent 100%
+  );
   pointer-events: none;
   /* background:blue; */
   overflow: hidden;
@@ -141,6 +152,7 @@ body {
     rgba(0, 0, 0, 0.025) 80%
   );
 }
+
 /* Inner Icon */
 .bubble .icon {
   width: 45px;
@@ -158,6 +170,7 @@ body {
   cursor: default;
   pointer-events: none;
 }
+
 .bubble:not(:has(div))::after {
   content: "";
   position: absolute;
