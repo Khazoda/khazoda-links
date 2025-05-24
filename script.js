@@ -102,11 +102,6 @@ document.addEventListener("DOMContentLoaded", async function () {
     event.preventDefault();
     const bubble = this;
 
-    if (clickTimeout) {
-      clearTimeout(clickTimeout);
-      clickTimeout = null;
-    }
-
     if (selectedBubble === bubble) {
       // Second click - open link
       const href = bubble.href || bubble.dataset.href;
@@ -118,10 +113,6 @@ document.addEventListener("DOMContentLoaded", async function () {
     // First click - select bubble
     clearSelection();
     selectBubble(bubble);
-    clickTimeout = setTimeout(() => {
-      clearSelection();
-      clickTimeout = null;
-    }, 5000);
   }
 
   // Grid navigation
