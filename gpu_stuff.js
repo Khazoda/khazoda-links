@@ -11,58 +11,84 @@ const linksContainerRef = document.getElementById("links-container");
 requestAnimationFrame(initScene);
 
 function initScene() {
-  const scene = new THREE.Scene();
-  const containerWidth = containerRef.clientWidth || linksContainerRef.clientWidth;
-  const containerHeight = containerRef.clientHeight || linksContainerRef.clientHeight;
-  const camera = new THREE.PerspectiveCamera(75, containerWidth / containerHeight, 0.1, 1000);
+  const sceneConfig = createSceneConfiguration();
+  const { scene, camera, renderer, composer } = sceneConfig;
 
-  const renderer = new THREE.WebGLRenderer({
-    antialias: false,
-    alpha: true,
-    powerPreference: "high-performance",
-    stencil: false,
-    depth: true,
-  });
-  renderer.setSize(containerWidth, containerHeight);
-  renderer.setClearColor(0x000000, 0);
-  renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  setupLighting(scene);
 
-  containerRef.appendChild(renderer.domElement);
+  // Centralized model state
+  const modelState = {
+    current: null,
+    isVisible: false,
+    targetScale: 0,
+    currentScale: 0,
+    rotationSpeed: 0.005,
+    gltfLoader: new GLTFLoader(), // Reuse loader instance
+  };
 
-  // Post-processing setup
-  const composer = new EffectComposer(renderer);
-  composer.setSize(containerWidth, containerHeight);
+  camera.position.z = 6;
 
-  const renderPass = new RenderPass(scene, camera);
-  renderPass.clearAlpha = 0;
-  composer.addPass(renderPass);
+  function createSceneConfiguration() {
+    const scene = new THREE.Scene();
+    const containerWidth = containerRef.clientWidth || linksContainerRef.clientWidth;
+    const containerHeight = containerRef.clientHeight || linksContainerRef.clientHeight;
+    const camera = new THREE.PerspectiveCamera(75, containerWidth / containerHeight, 0.1, 1000);
 
-  const taaRenderPass = new TAARenderPass(scene, camera);
-  taaRenderPass.sampleLevel = 2;
-  taaRenderPass.unbiased = false;
-  composer.addPass(taaRenderPass);
+    // High-performance renderer settings
+    const renderer = new THREE.WebGLRenderer({
+      antialias: false,
+      alpha: true,
+      powerPreference: "high-performance",
+      stencil: false,
+      depth: true,
+    });
 
-  composer.addPass(new OutputPass());
+    renderer.setSize(containerWidth, containerHeight);
+    renderer.setClearColor(0x000000, 0);
+    renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-  // Simplified lighting - just 2 lights instead of 4
-  scene.add(new THREE.AmbientLight(0xf4f1eb, 2.8));
+    containerRef.appendChild(renderer.domElement);
 
-  const directionalLight = new THREE.DirectionalLight(0xfff4e6, 2.5);
-  directionalLight.position.set(-3, 4, 5);
-  directionalLight.castShadow = true;
-  directionalLight.shadow.mapSize.setScalar(1024);
-  directionalLight.shadow.camera.near = 0.5;
-  directionalLight.shadow.camera.far = 20;
-  directionalLight.shadow.camera.left = directionalLight.shadow.camera.bottom = -5;
-  directionalLight.shadow.camera.right = directionalLight.shadow.camera.top = 5;
-  directionalLight.shadow.bias = -0.0001;
-  directionalLight.shadow.radius = 4;
-  scene.add(directionalLight);
+    // Post-processing pipeline
+    const composer = new EffectComposer(renderer);
+    composer.setSize(containerWidth, containerHeight);
 
-  // Configure shadows for GLTF models
-  function configureSelfShadows(object) {
+    const renderPass = new RenderPass(scene, camera);
+    renderPass.clearAlpha = 0;
+    composer.addPass(renderPass);
+
+    // Temporal Anti-Aliasing
+    const taaRenderPass = new TAARenderPass(scene, camera);
+    taaRenderPass.sampleLevel = 2;
+    taaRenderPass.unbiased = false;
+    composer.addPass(taaRenderPass);
+
+    composer.addPass(new OutputPass());
+
+    return { scene, camera, renderer, composer };
+  }
+
+  function setupLighting(scene) {
+    // Warm ambient lighting
+    scene.add(new THREE.AmbientLight(0xf4f1eb, 2.8));
+
+    // Main directional light with shadows
+    const directionalLight = new THREE.DirectionalLight(0xfff4e6, 2.5);
+    directionalLight.position.set(-3, 4, 5);
+    directionalLight.castShadow = true;
+    directionalLight.shadow.mapSize.setScalar(1024);
+    directionalLight.shadow.camera.near = 0.5;
+    directionalLight.shadow.camera.far = 20;
+    directionalLight.shadow.camera.left = directionalLight.shadow.camera.bottom = -5;
+    directionalLight.shadow.camera.right = directionalLight.shadow.camera.top = 5;
+    directionalLight.shadow.bias = -0.0001;
+    directionalLight.shadow.radius = 4;
+    scene.add(directionalLight);
+  }
+
+  function enableShadowsForModel(object) {
     object.traverse((child) => {
       if (child.isMesh) {
         child.castShadow = child.receiveShadow = true;
@@ -70,16 +96,31 @@ function initScene() {
     });
   }
 
-  let currentModel = null;
-  let isVisible = false;
-  let targetScale = 0;
-  let currentScale = 0;
-  let rotationSpeed = 0.005;
+  // Resource cleanup to prevent memory leaks
+  function disposeModelResources(model) {
+    if (!model) return;
 
-  camera.position.z = 6;
+    const disposeResource = (resource) => {
+      if (resource?.dispose) resource.dispose();
+    };
 
-  // Simplified image to geometry conversion
-  function createGeometryFromImage(imagePath) {
+    if (model.traverse) {
+      model.traverse((child) => {
+        disposeResource(child.geometry);
+        if (Array.isArray(child.material)) {
+          child.material.forEach(disposeResource);
+        } else {
+          disposeResource(child.material);
+        }
+      });
+    } else {
+      disposeResource(model.geometry);
+      disposeResource(model.material);
+    }
+  }
+
+  // Convert 2D images into 3D voxel art
+  function createVoxelGeometryFromImage(imagePath) {
     return new Promise((resolve) => {
       const img = new Image();
       img.crossOrigin = "anonymous";
@@ -92,85 +133,7 @@ function initScene() {
         ctx.drawImage(img, 0, 0);
 
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const data = imageData.data;
-        const geometry = new THREE.BufferGeometry();
-        const vertices = [];
-        const indices = [];
-        const colors = [];
-        const scale = 0.08;
-        const depth = 0.4;
-        let vertexIndex = 0;
-
-        for (let y = 0; y < canvas.height; y++) {
-          for (let x = 0; x < canvas.width; x++) {
-            const pixelIndex = (y * canvas.width + x) * 4;
-            const alpha = data[pixelIndex + 3];
-
-            if (alpha > 64) {
-              const r = data[pixelIndex] / 255;
-              const g = data[pixelIndex + 1] / 255;
-              const b = data[pixelIndex + 2] / 255;
-
-              const px = (x - canvas.width / 2) * scale;
-              const py = (canvas.height - 1 - y - canvas.height / 2) * scale;
-              const halfScale = scale / 2;
-              const halfDepth = depth / 2;
-
-              // Simplified cube vertices
-              const cubeVertices = [
-                px - halfScale,
-                py + halfScale,
-                halfDepth,
-                px + halfScale,
-                py + halfScale,
-                halfDepth,
-                px + halfScale,
-                py - halfScale,
-                halfDepth,
-                px - halfScale,
-                py - halfScale,
-                halfDepth,
-                px - halfScale,
-                py + halfScale,
-                -halfDepth,
-                px + halfScale,
-                py + halfScale,
-                -halfDepth,
-                px + halfScale,
-                py - halfScale,
-                -halfDepth,
-                px - halfScale,
-                py - halfScale,
-                -halfDepth,
-              ];
-
-              vertices.push(...cubeVertices);
-              for (let i = 0; i < 8; i++) colors.push(r, g, b);
-
-              const baseIdx = vertexIndex * 8;
-              // Cube faces
-              const faces = [
-                [0, 1, 2, 0, 2, 3], // front
-                [4, 6, 5, 4, 7, 6], // back
-                [0, 4, 5, 0, 5, 1], // top
-                [3, 2, 6, 3, 6, 7], // bottom
-                [0, 3, 7, 0, 7, 4], // left
-                [1, 5, 6, 1, 6, 2], // right
-              ];
-
-              for (const face of faces) {
-                indices.push(...face.map((v) => baseIdx + v));
-              }
-
-              vertexIndex++;
-            }
-          }
-        }
-
-        geometry.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
-        geometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
-        geometry.setIndex(indices);
-        geometry.computeVertexNormals();
+        const geometry = processImageDataToGeometry(imageData, canvas.width, canvas.height);
         resolve(geometry);
       };
 
@@ -178,17 +141,114 @@ function initScene() {
     });
   }
 
+  // Generate cube geometry for each visible pixel
+  function processImageDataToGeometry(imageData, width, height) {
+    const data = imageData.data;
+    const geometry = new THREE.BufferGeometry();
+    const vertices = [];
+    const indices = [];
+    const colors = [];
+    const scale = 0.08;
+    const depth = 0.4;
+    let vertexIndex = 0;
+
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const pixelIndex = (y * width + x) * 4;
+        const alpha = data[pixelIndex + 3];
+
+        // Only create geometry for non-transparent pixels
+        if (alpha > 64) {
+          const voxelData = createVoxelAtPosition(x, y, width, height, scale, depth, data, pixelIndex);
+          vertices.push(...voxelData.vertices);
+          colors.push(...voxelData.colors);
+
+          const baseIdx = vertexIndex * 8;
+          const cubeIndices = generateCubeIndices(baseIdx);
+          indices.push(...cubeIndices);
+
+          vertexIndex++;
+        }
+      }
+    }
+
+    geometry.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
+    geometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+    geometry.setIndex(indices);
+    geometry.computeVertexNormals();
+    return geometry;
+  }
+
+  // Create cube at image coordinate
+  function createVoxelAtPosition(x, y, width, height, scale, depth, data, pixelIndex) {
+    const r = data[pixelIndex] / 255;
+    const g = data[pixelIndex + 1] / 255;
+    const b = data[pixelIndex + 2] / 255;
+
+    // Convert 2D coordinates to 3D space
+    const px = (x - width / 2) * scale;
+    const py = (height - 1 - y - height / 2) * scale;
+    const halfScale = scale / 2;
+    const halfDepth = depth / 2;
+
+    // 8 vertices for cube
+    const vertices = [
+      px - halfScale,
+      py + halfScale,
+      halfDepth,
+      px + halfScale,
+      py + halfScale,
+      halfDepth,
+      px + halfScale,
+      py - halfScale,
+      halfDepth,
+      px - halfScale,
+      py - halfScale,
+      halfDepth,
+      px - halfScale,
+      py + halfScale,
+      -halfDepth,
+      px + halfScale,
+      py + halfScale,
+      -halfDepth,
+      px + halfScale,
+      py - halfScale,
+      -halfDepth,
+      px - halfScale,
+      py - halfScale,
+      -halfDepth,
+    ];
+
+    const colors = Array(8)
+      .fill()
+      .flatMap(() => [r, g, b]);
+
+    return { vertices, colors };
+  }
+
+  // Triangle indices for cube faces
+  function generateCubeIndices(baseIdx) {
+    const faces = [
+      [0, 1, 2, 0, 2, 3], // front
+      [4, 6, 5, 4, 7, 6], // back
+      [0, 4, 5, 0, 5, 1], // top
+      [3, 2, 6, 3, 6, 7], // bottom
+      [0, 3, 7, 0, 7, 4], // left
+      [1, 5, 6, 1, 6, 2], // right
+    ];
+
+    return faces.flat().map((v) => baseIdx + v);
+  }
+
   function loadGLTFModel(modelPath) {
     return new Promise((resolve, reject) => {
-      const loader = new GLTFLoader();
-
-      loader.load(
+      modelState.gltfLoader.load(
         modelPath,
         (gltf) => {
           const model = gltf.scene;
           const group = new THREE.Group();
 
-          // Scale and center the model
+          // Normalize model size and center
           const box = new THREE.Box3().setFromObject(model);
           const center = box.getCenter(new THREE.Vector3());
           const size = box.getSize(new THREE.Vector3());
@@ -199,99 +259,92 @@ function initScene() {
           model.rotation.y = -Math.PI / 1.5;
 
           group.add(model);
-          configureSelfShadows(group);
+          enableShadowsForModel(group);
           resolve(group);
         },
         undefined,
-        (error) => {
-          console.error("Error loading GLTF model:", error);
-          reject(error);
-        }
+        reject
       );
     });
   }
 
-  // Simplified easing
-  const easeOut = (t) => 1 - (1 - t) ** 3;
+  // Dynamic rotation based on current orientation
+  function updateModelAnimation(time) {
+    if (!modelState.current || !modelState.isVisible) return;
+
+    // Adjust rotation speed based on facing direction
+    const normalizedY = ((modelState.current.rotation.y % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+    const facingFactor = Math.cos(normalizedY);
+    const targetSpeed = 0.0045 + facingFactor * -0.0025;
+    modelState.rotationSpeed += (targetSpeed - modelState.rotationSpeed) * 0.03;
+
+    // Floating animation with multiple sine waves
+    modelState.current.rotation.x = Math.sin(time * 0.3) * 0.06 + Math.cos(time * 0.8) * 0.03;
+    modelState.current.rotation.y -= modelState.rotationSpeed + Math.sin(time * 0.4) * 0.0005;
+    modelState.current.rotation.z = Math.cos(time * 0.5) * 0.035 + Math.sin(time * 0.9) * 0.02;
+  }
+
+  // Smooth scale transitions with easing
+  function updateModelScale() {
+    const scaleDiff = modelState.targetScale - modelState.currentScale;
+    const easingSpeed = Math.abs(scaleDiff) > 0.1 ? 0.08 : 0.05;
+    const easeOut = (t) => 1 - (1 - t) ** 3;
+
+    modelState.currentScale += scaleDiff * easeOut(easingSpeed);
+
+    if (modelState.current) {
+      modelState.current.scale.setScalar(modelState.currentScale);
+    }
+  }
 
   function animate() {
     requestAnimationFrame(animate);
     const time = Date.now() * 0.001;
 
-    // Smooth scale transition
-    const scaleDiff = targetScale - currentScale;
-    const easingSpeed = Math.abs(scaleDiff) > 0.1 ? 0.08 : 0.05;
-    currentScale += scaleDiff * easeOut(easingSpeed);
-
-    if (currentModel) {
-      currentModel.scale.setScalar(currentScale);
-
-      if (isVisible) {
-        // Simplified rotation speed calculation
-        const normalizedY = ((currentModel.rotation.y % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-        const facingFactor = Math.cos(normalizedY);
-        const targetSpeed = 0.0045 + facingFactor * -0.0025;
-        rotationSpeed += (targetSpeed - rotationSpeed) * 0.03;
-
-        // Simplified floating animation
-        currentModel.rotation.x = Math.sin(time * 0.3) * 0.06 + Math.cos(time * 0.8) * 0.03;
-        currentModel.rotation.y -= rotationSpeed + Math.sin(time * 0.4) * 0.0005;
-        currentModel.rotation.z = Math.cos(time * 0.5) * 0.035 + Math.sin(time * 0.9) * 0.02;
-      }
-    }
-
+    updateModelScale();
+    updateModelAnimation(time);
     composer.render();
   }
 
+  // Display GLTF models or voxel art from images
   async function showModel(modelPath = "static/bluesky.png") {
-    const currentRotation = currentModel?.rotation || { x: 0, y: 0, z: 0 };
+    const currentRotation = modelState.current?.rotation || { x: 0, y: 0, z: 0 };
 
     // Clean up previous model
-    if (currentModel) {
-      scene.remove(currentModel);
-      if (currentModel.geometry?.dispose) currentModel.geometry.dispose();
-      if (currentModel.material?.dispose) currentModel.material.dispose();
-      if (currentModel.traverse) {
-        currentModel.traverse((child) => {
-          if (child.geometry) child.geometry.dispose();
-          if (child.material) {
-            if (Array.isArray(child.material)) {
-              child.material.forEach((material) => material.dispose());
-            } else {
-              child.material.dispose();
-            }
-          }
-        });
-      }
+    if (modelState.current) {
+      scene.remove(modelState.current);
+      disposeModelResources(modelState.current);
     }
 
     try {
       const isGLTF = /\.(gltf|glb)$/i.test(modelPath);
 
       if (isGLTF) {
-        currentModel = await loadGLTFModel(modelPath);
+        modelState.current = await loadGLTFModel(modelPath);
       } else {
-        const geometry = await createGeometryFromImage(modelPath);
+        // Convert 2D image to 3D voxels
+        const geometry = await createVoxelGeometryFromImage(modelPath);
         const material = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: false });
-        currentModel = new THREE.Mesh(geometry, material);
+        modelState.current = new THREE.Mesh(geometry, material);
       }
 
-      scene.add(currentModel);
-      isVisible = true;
-      targetScale = isGLTF ? 7 : 1;
-      currentScale = 0;
-      currentModel.rotation.set(currentRotation.x, currentRotation.y, currentRotation.z);
-      rotationSpeed = 0.005;
+      scene.add(modelState.current);
+      modelState.isVisible = true;
+      modelState.targetScale = isGLTF ? 7 : 1;
+      modelState.currentScale = 0;
+      modelState.current.rotation.set(currentRotation.x, currentRotation.y, currentRotation.z);
+      modelState.rotationSpeed = 0.005;
     } catch (error) {
       console.error("Failed to create 3D model:", error);
     }
   }
 
   function hideModel() {
-    isVisible = false;
-    targetScale = 0;
+    modelState.isVisible = false;
+    modelState.targetScale = 0;
   }
 
+  // External API
   window.faviconDisplay = { show: showModel, hide: hideModel };
   animate();
 }

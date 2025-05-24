@@ -1,60 +1,125 @@
 document.addEventListener("DOMContentLoaded", async function () {
-  let selectedBubble = null;
-  let clickTimeout = null;
-  let audioContext = null;
-  let selectSoundBuffer = null;
-  let siteData = {};
+  // Centralized application state
+  const appState = {
+    selectedBubble: null,
+    audioContext: null,
+    selectSoundBuffer: null,
+    siteData: {},
+    timeouts: {
+      click: null,
+      typewriter: null,
+      modelLoad: null,
+    },
+  };
 
-  // Load site data and initialize
-  try {
-    const response = await fetch("SITELIST.json");
-    siteData = await response.json();
-  } catch (error) {
-    console.error("Failed to load site data:", error);
+  // Cached DOM elements
+  const elements = {
+    urlDisplay: document.getElementById("url-display"),
+    linksGrid: document.getElementById("links-grid"),
+    bubbles: null,
+  };
+
+  await initializeApplication();
+
+  async function initializeApplication() {
+    await loadSiteData();
+    initializeAudioOnFirstInteraction();
+    setupBubbleElements();
+    setupEventListeners();
   }
 
-  // Audio setup
+  async function loadSiteData() {
+    try {
+      const response = await fetch("SITELIST.json");
+      appState.siteData = await response.json();
+    } catch (error) {
+      console.error("Failed to load site data:", error);
+    }
+  }
+
+  // Lazy audio initialization for autoplay compliance
+  function initializeAudioOnFirstInteraction() {
+    document.addEventListener(
+      "click",
+      () => {
+        if (!appState.audioContext) {
+          appState.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+      },
+      { once: true }
+    );
+  }
+
+  function setupBubbleElements() {
+    elements.bubbles = document.querySelectorAll(".bubble:has(div)");
+    elements.bubbles.forEach((bubble) => {
+      bubble.style.cursor = "inherit";
+      bubble.addEventListener("click", handleBubbleClick);
+      bubble.dataset.href = bubble.href;
+    });
+  }
+
+  function setupEventListeners() {
+    document.addEventListener("click", handleDocumentClick);
+    document.addEventListener("keydown", handleKeyDown);
+  }
+
+  async function initializeAudioContext() {
+    if (!appState.audioContext) {
+      appState.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (appState.audioContext.state === "suspended") {
+      await appState.audioContext.resume();
+    }
+  }
+
+  // Load audio once and reuse
+  async function loadSelectSound() {
+    if (appState.selectSoundBuffer) return;
+
+    try {
+      const response = await fetch("static/ui_select.ogg");
+      const arrayBuffer = await response.arrayBuffer();
+      appState.selectSoundBuffer = await appState.audioContext.decodeAudioData(arrayBuffer);
+    } catch (error) {
+      throw new Error("Failed to load select sound");
+    }
+  }
+
   async function playSelectSound() {
     try {
-      if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioContext.state === "suspended") await audioContext.resume();
+      await initializeAudioContext();
+      await loadSelectSound();
 
-      if (!selectSoundBuffer) {
-        const response = await fetch("static/ui_select.ogg");
-        const arrayBuffer = await response.arrayBuffer();
-        selectSoundBuffer = await audioContext.decodeAudioData(arrayBuffer);
-      }
+      // Create new nodes for each play
+      const source = appState.audioContext.createBufferSource();
+      const gainNode = appState.audioContext.createGain();
 
-      const source = audioContext.createBufferSource();
-      const gainNode = audioContext.createGain();
-      source.buffer = selectSoundBuffer;
+      source.buffer = appState.selectSoundBuffer;
       gainNode.gain.value = 0.8;
       source.connect(gainNode);
-      gainNode.connect(audioContext.destination);
+      gainNode.connect(appState.audioContext.destination);
       source.start();
     } catch (err) {
       console.log("Audio playback failed:", err);
     }
   }
 
-  // Get site key from bubble
-  function getSiteKey(bubble) {
+  // Match bubble links to site data
+  function getSiteKeyFromBubble(bubble) {
     if (bubble.dataset.siteKey) return bubble.dataset.siteKey;
 
     const href = bubble.href || bubble.dataset.href;
-    if (href) {
-      const cleanUrl = href.replace(/^https?:\/\//, "");
-      for (const [key, url] of Object.entries(siteData)) {
-        if (cleanUrl.includes(url) || url.includes(cleanUrl.split("/")[0])) {
-          return key;
-        }
-      }
-    }
-    return null;
+    if (!href) return null;
+
+    const cleanUrl = href.replace(/^https?:\/\//, "");
+    return (
+      Object.entries(appState.siteData).find(([key, url]) => cleanUrl.includes(url) || url.includes(cleanUrl.split("/")[0]))?.[0] || null
+    );
   }
 
-  // Check if 3D model exists and get appropriate path
-  async function getModelPath(siteKey) {
+  // Check for 3D model, fallback to 2D
+  async function checkModelExists(siteKey) {
     try {
       const modelPath = `/static/links/${siteKey}_model.gltf`;
       const response = await fetch(modelPath, { method: "HEAD" });
@@ -64,61 +129,140 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
   }
 
-  // Select bubble and show 3D model
-  async function selectBubble(bubble) {
-    selectedBubble = bubble;
-    bubble.focus();
-    playSelectSound();
+  // Centralized timeout management
+  function clearAllTimeouts() {
+    Object.values(appState.timeouts).forEach((timeout) => {
+      if (timeout) clearTimeout(timeout);
+    });
+    appState.timeouts = { click: null, typewriter: null, modelLoad: null };
+  }
 
-    const iconImg = bubble.querySelector(".icon img");
-    if (iconImg && window.faviconDisplay) {
-      const siteKey = getSiteKey(bubble);
-      if (siteKey) {
-        const modelPath = await getModelPath(siteKey);
-        window.faviconDisplay.show(modelPath);
-      } else {
-        const faviconPath = iconImg.src;
-        const relativePath = faviconPath.includes("/static/") ? faviconPath.substring(faviconPath.indexOf("/static/") + 1) : faviconPath;
-        window.faviconDisplay.show(relativePath);
-      }
+  function clearTypewriterEffect() {
+    if (elements.urlDisplay) {
+      elements.urlDisplay.classList.remove("visible");
+      elements.urlDisplay.textContent = "";
+    }
+    if (appState.timeouts.typewriter) {
+      clearTimeout(appState.timeouts.typewriter);
+      appState.timeouts.typewriter = null;
     }
   }
 
-  // Clear selection
-  function clearSelection() {
-    if (selectedBubble) {
-      selectedBubble.blur();
-      selectedBubble = null;
-    }
-    if (clickTimeout) {
-      clearTimeout(clickTimeout);
-      clickTimeout = null;
-    }
+  function clearAllPendingOperations() {
+    clearTypewriterEffect();
+    clearAllTimeouts();
     if (window.faviconDisplay) window.faviconDisplay.hide();
   }
 
-  // Handle bubble clicks
+  // Load and display 3D model with URL
+  async function showModelForBubble(bubble) {
+    const iconImg = bubble.querySelector(".icon img");
+    if (!iconImg || !window.faviconDisplay) return;
+
+    const siteKey = getSiteKeyFromBubble(bubble);
+
+    if (siteKey) {
+      // Small delay for cleanup
+      appState.timeouts.modelLoad = setTimeout(async () => {
+        if (appState.selectedBubble === bubble) {
+          const modelPath = await checkModelExists(siteKey);
+          window.faviconDisplay.show(modelPath);
+
+          const url = appState.siteData[siteKey];
+          if (url && appState.selectedBubble === bubble) {
+            startTypewriterEffect(url, 60);
+          }
+        }
+      }, 50);
+    } else {
+      // Fallback to favicon
+      appState.timeouts.modelLoad = setTimeout(() => {
+        if (appState.selectedBubble === bubble) {
+          const faviconPath = iconImg.src;
+          const relativePath = faviconPath.includes("/static/") ? faviconPath.substring(faviconPath.indexOf("/static/") + 1) : faviconPath;
+          window.faviconDisplay.show(relativePath);
+        }
+      }, 50);
+    }
+  }
+
+  async function selectBubble(bubble) {
+    clearAllPendingOperations();
+
+    appState.selectedBubble = bubble;
+    bubble.focus();
+    playSelectSound();
+
+    await showModelForBubble(bubble);
+  }
+
+  function clearSelection() {
+    if (appState.selectedBubble) {
+      appState.selectedBubble.blur();
+      appState.selectedBubble = null;
+    }
+    clearAllPendingOperations();
+  }
+
+  function openBubbleLink(bubble) {
+    const href = bubble.href || bubble.dataset.href;
+    if (href && href !== "#") {
+      window.open(href, "_blank", "noopener,noreferrer");
+    }
+  }
+
+  // Dual-click: select then open
   function handleBubbleClick(event) {
     event.preventDefault();
     const bubble = this;
 
-    if (selectedBubble === bubble) {
-      // Second click - open link
-      const href = bubble.href || bubble.dataset.href;
-      if (href && href !== "#") window.open(href, "_blank", "noopener,noreferrer");
+    if (appState.selectedBubble === bubble) {
+      openBubbleLink(bubble);
       clearSelection();
       return;
     }
 
-    // First click - select bubble
     clearSelection();
     selectBubble(bubble);
   }
 
-  // Grid navigation
+  function getBubblesArray() {
+    if (!elements.bubbles) {
+      elements.bubbles = document.querySelectorAll(".bubble:has(div)");
+    }
+    return Array.from(elements.bubbles);
+  }
+
+  function calculateGridColumns() {
+    if (!elements.linksGrid) return 1;
+    return getComputedStyle(elements.linksGrid).gridTemplateColumns.split(" ").length;
+  }
+
+  // Calculate next position in grid
+  function getNextBubbleIndex(currentIndex, direction, bubblesCount, cols) {
+    switch (direction) {
+      case "ArrowLeft":
+        return currentIndex > 0 ? currentIndex - 1 : bubblesCount - 1;
+      case "ArrowRight":
+        return currentIndex < bubblesCount - 1 ? currentIndex + 1 : 0;
+      case "ArrowUp":
+        let upIndex = currentIndex - cols;
+        if (upIndex < 0) {
+          upIndex = currentIndex + Math.floor((bubblesCount - 1) / cols) * cols;
+          if (upIndex >= bubblesCount) upIndex -= cols;
+        }
+        return upIndex;
+      case "ArrowDown":
+        let downIndex = currentIndex + cols;
+        return downIndex >= bubblesCount ? currentIndex % cols : downIndex;
+      default:
+        return currentIndex;
+    }
+  }
+
+  // Keyboard navigation respecting grid layout
   function navigateGrid(direction) {
-    const bubbles = document.querySelectorAll(".bubble:has(div)");
-    const bubblesArray = Array.from(bubbles);
+    const bubblesArray = getBubblesArray();
     const currentIndex = bubblesArray.indexOf(document.activeElement);
 
     if (currentIndex === -1) {
@@ -126,61 +270,51 @@ document.addEventListener("DOMContentLoaded", async function () {
       return;
     }
 
-    const gridElement = document.getElementById("links-grid");
-    const cols = getComputedStyle(gridElement).gridTemplateColumns.split(" ").length;
-    let newIndex = currentIndex;
-
-    switch (direction) {
-      case "ArrowLeft":
-        newIndex = currentIndex > 0 ? currentIndex - 1 : bubblesArray.length - 1;
-        break;
-      case "ArrowRight":
-        newIndex = currentIndex < bubblesArray.length - 1 ? currentIndex + 1 : 0;
-        break;
-      case "ArrowUp":
-        newIndex = currentIndex - cols;
-        if (newIndex < 0) newIndex = currentIndex + Math.floor((bubblesArray.length - 1) / cols) * cols;
-        if (newIndex >= bubblesArray.length) newIndex -= cols;
-        break;
-      case "ArrowDown":
-        newIndex = currentIndex + cols;
-        if (newIndex >= bubblesArray.length) newIndex = currentIndex % cols;
-        break;
-    }
-
+    const cols = calculateGridColumns();
+    const newIndex = getNextBubbleIndex(currentIndex, direction, bubblesArray.length, cols);
     const newElement = bubblesArray[newIndex];
+
     if (newElement) {
       clearSelection();
       selectBubble(newElement);
     }
   }
 
-  // Event listeners
-  document.querySelectorAll(".bubble:has(div)").forEach((bubble) => {
-    bubble.style.cursor = "inherit";
-    bubble.addEventListener("click", handleBubbleClick);
-    bubble.dataset.href = bubble.href;
-  });
+  function handleDocumentClick(event) {
+    if (!event.target.closest(".bubble:has(div)")) {
+      clearSelection();
+    }
+  }
 
-  document.addEventListener("click", (event) => {
-    if (!event.target.closest(".bubble:has(div)")) clearSelection();
-  });
-
-  document.addEventListener("keydown", (event) => {
+  function handleKeyDown(event) {
     if (event.key === "Escape") {
       clearSelection();
     } else if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) {
       event.preventDefault();
       navigateGrid(event.key);
     }
-  });
+  }
 
-  // Initialize audio context on first interaction
-  document.addEventListener(
-    "click",
-    () => {
-      if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    },
-    { once: true }
-  );
+  // Character-by-character text animation
+  function startTypewriterEffect(text, speed = 50) {
+    if (!elements.urlDisplay) return;
+
+    clearTypewriterEffect();
+
+    elements.urlDisplay.textContent = "";
+    elements.urlDisplay.classList.add("visible");
+
+    let charIndex = 0;
+
+    function typeNextCharacter() {
+      if (charIndex < text.length) {
+        elements.urlDisplay.textContent += text.charAt(charIndex);
+        charIndex++;
+        appState.timeouts.typewriter = setTimeout(typeNextCharacter, speed);
+      }
+    }
+
+    // Initial delay
+    appState.timeouts.typewriter = setTimeout(typeNextCharacter, 200);
+  }
 });

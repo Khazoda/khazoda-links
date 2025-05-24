@@ -21,16 +21,73 @@ body {
   width: 430px;
   height: 290px;
 }
+
+#url-display {
+  width: 430px;
+  height: 40px;
+  display: block;
+  line-height: 40px;
+  text-align: left;
+  font-family: monospace;
+  font-size: 16px;
+  font-weight: bold;
+  color: #4a4a4a;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  margin: 10px 0;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  padding: 0 15px;
+  box-sizing: border-box;
+}
+
+#url-display.visible {
+  opacity: 1;
+}
+
+#url-display::after {
+  content: "|";
+  animation: blink 1s infinite;
+  color: #e3732d;
+}
+
+@keyframes blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
+}
+
 /* Smaller Screen Size */
 @media screen and (max-width: 462px) {
   #gpu-container {
     max-width: 360px;
     max-height: 360px;
   }
+
+  #url-display {
+    max-width: 360px;
+    font-size: 14px;
+    padding: 0 12px;
+  }
 }
 
 @media screen and (max-width: 415px) {
   #gpu-container {
+    display: none;
+  }
+
+  #url-display {
     display: none;
   }
 }
