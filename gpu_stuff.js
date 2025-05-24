@@ -1,5 +1,9 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+import { TAARenderPass } from "three/addons/postprocessing/TAARenderPass.js";
+import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 
 const containerRef = document.getElementById("gpu-container");
 const linksContainerRef = document.getElementById("links-container");
@@ -15,26 +19,51 @@ function initScene() {
   const containerHeight = containerRef.clientHeight || linksContainerRef.clientHeight;
   const camera = new THREE.PerspectiveCamera(75, containerWidth / containerHeight, 0.1, 1000);
 
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  const renderer = new THREE.WebGLRenderer({
+    antialias: false, // TRAA handles all antialiasing
+    alpha: true,
+    powerPreference: "high-performance",
+    stencil: false,
+    depth: true,
+  });
   renderer.setSize(containerWidth, containerHeight);
   renderer.setClearColor(0x000000, 0);
   renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
+
   containerRef.appendChild(renderer.domElement);
 
-  // Add lighting for GLTF models
-  const ambientLight = new THREE.AmbientLight(0xffffff, 2);
+  // Setup post-processing
+  const composer = new EffectComposer(renderer);
+  composer.setSize(containerWidth, containerHeight);
+
+  // Basic render pass
+  const renderPass = new RenderPass(scene, camera);
+  renderPass.clearAlpha = 0; // Ensure transparent background
+  composer.addPass(renderPass);
+
+  // TRAA - Temporal Reprojection Anti-Aliasing
+  const taaRenderPass = new TAARenderPass(scene, camera);
+  taaRenderPass.sampleLevel = 2;
+  taaRenderPass.unbiased = false;
+  composer.addPass(taaRenderPass);
+
+  // Output pass for proper color space
+  const outputPass = new OutputPass();
+  composer.addPass(outputPass);
+
+  const ambientLight = new THREE.AmbientLight(0xf4f1eb, 2.8);
   scene.add(ambientLight);
-
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
-  directionalLight.position.set(5, 5, 5);
+  const directionalLight = new THREE.DirectionalLight(0xfff4e6, 2.2);
+  directionalLight.position.set(-3, 4, 5);
   scene.add(directionalLight);
-
-  const directionalLight2 = new THREE.DirectionalLight(0xffffff, 1);
-  directionalLight2.position.set(-5, -5, 5);
+  const directionalLight2 = new THREE.DirectionalLight(0xe6f3ff, 1.0);
+  directionalLight2.position.set(3, -2, 4);
   scene.add(directionalLight2);
+  const rimLight = new THREE.DirectionalLight(0xd6e8ff, 0.6);
+  rimLight.position.set(2, -3, -4);
+  scene.add(rimLight);
 
   let currentModel = null;
-
   camera.position.z = 6;
 
   function createGeometryFromImage(imagePath) {
@@ -209,8 +238,8 @@ function initScene() {
           // Center the model within the group
           model.position.sub(center.multiplyScalar(scale));
 
-          // Rotate model 180 degrees around Y axis as gltfs are loaded backwards
-          model.rotation.y = Math.PI;
+          // Rotate model 90 degrees around Y axis as gltfs are loaded backwards, so it rotates into view, not out
+          model.rotation.y = -Math.PI / 1.5;
 
           group.add(model);
 
@@ -264,14 +293,14 @@ function initScene() {
         currentModel.rotation.x = Math.sin(time * 0.3) * 0.06 + Math.cos(time * 0.8) * 0.03 + Math.sin(time * 1.2) * 0.015;
 
         // Main rotation with smooth speed and subtle variation
-        currentModel.rotation.y += rotationSpeed + Math.sin(time * 0.4) * 0.0005;
+        currentModel.rotation.y -= rotationSpeed + Math.sin(time * 0.4) * 0.0005;
 
         // Enhanced roll with multiple wave layers
         currentModel.rotation.z = Math.cos(time * 0.5) * 0.035 + Math.sin(time * 0.9) * 0.02 + Math.cos(time * 1.1) * 0.01;
       }
     }
 
-    renderer.render(scene, camera);
+    composer.render();
   }
 
   async function showModel(modelPath = "static/bluesky.png") {
