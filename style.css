@@ -27,24 +27,25 @@ body {
   height: 40px;
   display: block;
   line-height: 40px;
+  position: relative;
+  bottom: -20px;
   text-align: left;
   font-family: monospace;
   font-size: 16px;
   font-weight: bold;
   color: #4a4a4a;
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 8px;
-  margin: 10px 0;
   opacity: 0;
   transition: opacity 0.3s ease;
-  backdrop-filter: blur(5px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
   padding: 0 15px;
   box-sizing: border-box;
+  z-index: -1;
+  border-radius: 10px 10px 0 0;
+  background: #f0efe1;
+  outline: 2px solid #f4f4e9;
+  box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.25);
 }
 
 #url-display.visible {
@@ -108,10 +109,11 @@ body {
   gap: 10px;
   max-width: 410px;
   background: #f0efe1;
-  padding: 10px;
-  border-radius: 10px;
   outline: 2px solid #f4f4e9;
   box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.25);
+
+  padding: 10px;
+  border-radius: 10px;
   min-width: 0;
 }
 

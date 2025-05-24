@@ -137,9 +137,11 @@ document.addEventListener("DOMContentLoaded", async function () {
     appState.timeouts = { click: null, typewriter: null, modelLoad: null };
   }
 
-  function clearTypewriterEffect() {
+  function clearTypewriterEffect(shouldHide = true) {
     if (elements.urlDisplay) {
-      elements.urlDisplay.classList.remove("visible");
+      if (shouldHide) {
+        elements.urlDisplay.classList.remove("visible");
+      }
       elements.urlDisplay.textContent = "";
     }
     if (appState.timeouts.typewriter) {
@@ -148,8 +150,8 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
   }
 
-  function clearAllPendingOperations() {
-    clearTypewriterEffect();
+  function clearAllPendingOperations(shouldHideUrlDisplay = true) {
+    clearTypewriterEffect(shouldHideUrlDisplay);
     clearAllTimeouts();
     if (window.faviconDisplay) window.faviconDisplay.hide();
   }
@@ -186,8 +188,8 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
   }
 
-  async function selectBubble(bubble) {
-    clearAllPendingOperations();
+  async function selectBubble(bubble, hadPreviousSelection = false) {
+    clearAllPendingOperations(!hadPreviousSelection);
 
     appState.selectedBubble = bubble;
     bubble.focus();
@@ -196,12 +198,12 @@ document.addEventListener("DOMContentLoaded", async function () {
     await showModelForBubble(bubble);
   }
 
-  function clearSelection() {
+  function clearSelection(shouldHideUrlDisplay = true) {
     if (appState.selectedBubble) {
       appState.selectedBubble.blur();
       appState.selectedBubble = null;
     }
-    clearAllPendingOperations();
+    clearAllPendingOperations(shouldHideUrlDisplay);
   }
 
   function openBubbleLink(bubble) {
@@ -222,8 +224,9 @@ document.addEventListener("DOMContentLoaded", async function () {
       return;
     }
 
-    clearSelection();
-    selectBubble(bubble);
+    const hadPreviousSelection = appState.selectedBubble !== null;
+    clearSelection(!hadPreviousSelection);
+    selectBubble(bubble, hadPreviousSelection);
   }
 
   function getBubblesArray() {
@@ -275,8 +278,9 @@ document.addEventListener("DOMContentLoaded", async function () {
     const newElement = bubblesArray[newIndex];
 
     if (newElement) {
-      clearSelection();
-      selectBubble(newElement);
+      const hadPreviousSelection = appState.selectedBubble !== null;
+      clearSelection(!hadPreviousSelection);
+      selectBubble(newElement, hadPreviousSelection);
     }
   }
 
@@ -299,7 +303,8 @@ document.addEventListener("DOMContentLoaded", async function () {
   function startTypewriterEffect(text, speed = 50) {
     if (!elements.urlDisplay) return;
 
-    clearTypewriterEffect();
+    const wasVisible = elements.urlDisplay.classList.contains("visible");
+    clearTypewriterEffect(!wasVisible);
 
     elements.urlDisplay.textContent = "";
     elements.urlDisplay.classList.add("visible");
