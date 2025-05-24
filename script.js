@@ -26,6 +26,9 @@ document.addEventListener("DOMContentLoaded", async function () {
     initializeAudioOnFirstInteraction();
     setupBubbleElements();
     setupEventListeners();
+    setTimeout(() => {
+      document.getElementById("gpu-container").classList.add("loaded");
+    }, 100);
   }
 
   async function loadSiteData() {
@@ -62,6 +65,19 @@ document.addEventListener("DOMContentLoaded", async function () {
   function setupEventListeners() {
     document.addEventListener("click", handleDocumentClick);
     document.addEventListener("keydown", handleKeyDown);
+
+    // Prevent white flash during page navigation
+    function handleNavigationStart() {
+      document.body.classList.add("navigating");
+    }
+
+    window.addEventListener("beforeunload", handleNavigationStart);
+    window.addEventListener("pagehide", handleNavigationStart);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden") {
+        handleNavigationStart();
+      }
+    });
   }
 
   async function initializeAudioContext() {

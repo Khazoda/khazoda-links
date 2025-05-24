@@ -20,6 +20,11 @@ body {
 #gpu-container {
   width: 430px;
   height: 290px;
+  opacity: 0;
+}
+
+#gpu-container.loaded {
+  opacity: 1;
 }
 
 #url-display {

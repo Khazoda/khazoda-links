@@ -346,5 +346,27 @@ function initScene() {
 
   // External API
   window.faviconDisplay = { show: showModel, hide: hideModel };
+
+  // Prevent white flash during page navigation/reload
+  function handleBeforeUnload() {
+    if (renderer && renderer.domElement) {
+      renderer.domElement.style.opacity = "0";
+      renderer.domElement.style.visibility = "hidden";
+    }
+    if (containerRef) {
+      containerRef.style.opacity = "0";
+      containerRef.style.visibility = "hidden";
+    }
+  }
+
+  // Listen for navigation events to prevent flash
+  window.addEventListener("beforeunload", handleBeforeUnload);
+  window.addEventListener("pagehide", handleBeforeUnload);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") {
+      handleBeforeUnload();
+    }
+  });
+
   animate();
 }
