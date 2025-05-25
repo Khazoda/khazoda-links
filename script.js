@@ -71,11 +71,17 @@ document.addEventListener("DOMContentLoaded", async function () {
       document.body.classList.add("navigating");
     }
 
+    function handleNavigationEnd() {
+      document.body.classList.remove("navigating");
+    }
+
     window.addEventListener("beforeunload", handleNavigationStart);
     window.addEventListener("pagehide", handleNavigationStart);
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "hidden") {
         handleNavigationStart();
+      } else if (document.visibilityState === "visible") {
+        handleNavigationEnd();
       }
     });
   }

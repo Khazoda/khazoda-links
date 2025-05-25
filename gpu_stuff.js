@@ -3,7 +3,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { TAARenderPass } from "three/addons/postprocessing/TAARenderPass.js";
-import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 
 const containerRef = document.getElementById("gpu-container");
 const linksContainerRef = document.getElementById("links-container");
@@ -11,8 +11,73 @@ const linksContainerRef = document.getElementById("links-container");
 requestAnimationFrame(initScene);
 
 function initScene() {
+  // Custom Soft Look Shader
+  const SoftLookShader = {
+    uniforms: {
+      tDiffuse: { value: null },
+      uTime: { value: 0.0 },
+      uApplyEffects: { value: true },
+    },
+
+    vertexShader: `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+
+    fragmentShader: `
+      uniform sampler2D tDiffuse;
+      uniform float uTime;
+      uniform bool uApplyEffects;
+      varying vec2 vUv;
+
+      float random(vec2 st) {
+        return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
+      }
+
+      void main() {
+        vec4 color = texture2D(tDiffuse, vUv);
+        
+        if (color.a > 0.01 && uApplyEffects) {
+          float luminance = dot(color.rgb, vec3(0.299, 0.587, 0.114));
+          
+          color.rgb = (color.rgb - 0.5) * 0.85 + 0.5; // soft contrast
+          color.rgb = mix(vec3(luminance), color.rgb, 0.95); // saturation
+          color.rgb += 0.04 + vec3(0.02, 0.01, -0.01); // lift shadows + warm bias
+          color.rgb += (random(vUv + uTime * 0.1) - 0.5) * 0.015; // film grain
+          
+          float dist = distance(vUv, vec2(0.5));
+          color.rgb *= mix(0.95, 1.0, 1.0 - smoothstep(0.6, 1.4, dist)); // vignette
+          
+          color.rgb = clamp(color.rgb, 0.0, 1.0);
+        }
+        
+        gl_FragColor = color;
+      }
+    `,
+  };
+
+  // Custom Pass Class
+  class SoftLookPass extends ShaderPass {
+    constructor() {
+      super(SoftLookShader);
+      this.startTime = Date.now();
+    }
+
+    render(renderer, writeBuffer, readBuffer) {
+      this.uniforms["uTime"].value = (Date.now() - this.startTime) * 0.001;
+      super.render(renderer, writeBuffer, readBuffer);
+    }
+
+    setEffectsEnabled(enabled) {
+      this.uniforms["uApplyEffects"].value = enabled;
+    }
+  }
+
   const sceneConfig = createSceneConfiguration();
-  const { scene, camera, renderer, composer } = sceneConfig;
+  const { scene, camera, renderer, composer, softLookPass } = sceneConfig;
 
   setupLighting(scene);
 
@@ -23,7 +88,8 @@ function initScene() {
     targetScale: 0,
     currentScale: 0,
     rotationSpeed: 0.005,
-    gltfLoader: new GLTFLoader(), // Reuse loader instance
+    gltfLoader: new GLTFLoader(),
+    softLookPass: softLookPass,
   };
 
   camera.position.z = 6;
@@ -65,18 +131,18 @@ function initScene() {
     taaRenderPass.unbiased = false;
     composer.addPass(taaRenderPass);
 
-    composer.addPass(new OutputPass());
+    // Add soft look shader pass
+    const softLookPass = new SoftLookPass();
+    composer.addPass(softLookPass);
 
-    return { scene, camera, renderer, composer };
+    return { scene, camera, renderer, composer, softLookPass };
   }
 
   function setupLighting(scene) {
-    // Warm ambient lighting
-    scene.add(new THREE.AmbientLight(0xf4f1eb, 2.8));
+    scene.add(new THREE.AmbientLight(0xe0e0e0, 3));
 
-    // Main directional light with shadows
-    const directionalLight = new THREE.DirectionalLight(0xfff4e6, 2.5);
-    directionalLight.position.set(-3, 4, 5);
+    const directionalLight = new THREE.DirectionalLight(0xf8f8f8, 2.25);
+    directionalLight.position.set(-10, 10, 10);
     directionalLight.castShadow = true;
     directionalLight.shadow.mapSize.setScalar(1024);
     directionalLight.shadow.camera.near = 0.5;
@@ -84,25 +150,19 @@ function initScene() {
     directionalLight.shadow.camera.left = directionalLight.shadow.camera.bottom = -5;
     directionalLight.shadow.camera.right = directionalLight.shadow.camera.top = 5;
     directionalLight.shadow.bias = -0.0001;
-    directionalLight.shadow.radius = 4;
+    directionalLight.shadow.radius = 6;
     scene.add(directionalLight);
   }
 
   function enableShadowsForModel(object) {
     object.traverse((child) => {
-      if (child.isMesh) {
-        child.castShadow = child.receiveShadow = true;
-      }
+      if (child.isMesh) child.castShadow = child.receiveShadow = true;
     });
   }
 
-  // Resource cleanup to prevent memory leaks
   function disposeModelResources(model) {
     if (!model) return;
-
-    const disposeResource = (resource) => {
-      if (resource?.dispose) resource.dispose();
-    };
+    const disposeResource = (resource) => resource?.dispose?.();
 
     if (model.traverse) {
       model.traverse((child) => {
@@ -272,13 +332,11 @@ function initScene() {
   function updateModelAnimation(time) {
     if (!modelState.current || !modelState.isVisible) return;
 
-    // Adjust rotation speed based on facing direction
     const normalizedY = ((modelState.current.rotation.y % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
     const facingFactor = Math.cos(normalizedY);
     const targetSpeed = 0.0045 + facingFactor * -0.0025;
     modelState.rotationSpeed += (targetSpeed - modelState.rotationSpeed) * 0.03;
 
-    // Floating animation with multiple sine waves
     modelState.current.rotation.x = Math.sin(time * 0.3) * 0.06 + Math.cos(time * 0.8) * 0.03;
     modelState.current.rotation.y -= modelState.rotationSpeed + Math.sin(time * 0.4) * 0.0005;
     modelState.current.rotation.z = Math.cos(time * 0.5) * 0.035 + Math.sin(time * 0.9) * 0.02;
@@ -291,10 +349,7 @@ function initScene() {
     const easeOut = (t) => 1 - (1 - t) ** 3;
 
     modelState.currentScale += scaleDiff * easeOut(easingSpeed);
-
-    if (modelState.current) {
-      modelState.current.scale.setScalar(modelState.currentScale);
-    }
+    if (modelState.current) modelState.current.scale.setScalar(modelState.currentScale);
   }
 
   function animate() {
@@ -310,7 +365,6 @@ function initScene() {
   async function showModel(modelPath = "static/bluesky.png") {
     const currentRotation = modelState.current?.rotation || { x: 0, y: 0, z: 0 };
 
-    // Clean up previous model
     if (modelState.current) {
       scene.remove(modelState.current);
       disposeModelResources(modelState.current);
@@ -319,10 +373,12 @@ function initScene() {
     try {
       const isGLTF = /\.(gltf|glb)$/i.test(modelPath);
 
+      // Control shader effects based on model type
+      modelState.softLookPass.setEffectsEnabled(isGLTF);
+
       if (isGLTF) {
         modelState.current = await loadGLTFModel(modelPath);
       } else {
-        // Convert 2D image to 3D voxels
         const geometry = await createVoxelGeometryFromImage(modelPath);
         const material = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: false });
         modelState.current = new THREE.Mesh(geometry, material);
@@ -359,12 +415,25 @@ function initScene() {
     }
   }
 
+  function handlePageVisible() {
+    if (renderer && renderer.domElement) {
+      renderer.domElement.style.opacity = "1";
+      renderer.domElement.style.visibility = "visible";
+    }
+    if (containerRef) {
+      containerRef.style.opacity = "1";
+      containerRef.style.visibility = "visible";
+    }
+  }
+
   // Listen for navigation events to prevent flash
   window.addEventListener("beforeunload", handleBeforeUnload);
   window.addEventListener("pagehide", handleBeforeUnload);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") {
       handleBeforeUnload();
+    } else if (document.visibilityState === "visible") {
+      handlePageVisible();
     }
   });
 
