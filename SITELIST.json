@@ -4,5 +4,12 @@
   "platform_bronze": "modrinth.com/mod/bronze",
   "platform_basicstorage": "modrinth.com/mod/basicstorage",
   "platform_breakerplacer": "modrinth.com/mod/breakerplacer",
-  "platform_heirlooms": "modrinth.com/mod/heirlooms"
+  "platform_heirlooms": "modrinth.com/mod/heirlooms",
+  
+  "platform_hookaduck": "modrinth.com/mod/hookaduck",
+  "platform_kreebles": "modrinth.com/mod/kreebles",
+  "platform_helpfulcampfires": "modrinth.com/mod/helpfulcampfires",
+  "platform_plastar": "modrinth.com/mod/plastar",
+  "platform_beefandblade": "modrinth.com/mod/beefandblade",
+  "platform_dwayne":"modrinth.com/mod/dwayne"
 }
