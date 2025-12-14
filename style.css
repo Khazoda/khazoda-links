@@ -64,7 +64,7 @@ body {
 }
 
 /* Smaller Screen Size */
-@media screen and (max-width: 462px) {
+@media screen and (max-width: 600px) {
   #url-display {
     max-width: 360px;
     font-size: 14px;
@@ -103,7 +103,7 @@ body {
 }
 
 /* 5 x 5 Grid */
-@media (max-width: 462px) {
+@media (max-width: 600px) {
   #links-grid {
     max-width: 360px;
   }
@@ -125,6 +125,9 @@ body {
 
 /* 2 x 12 Grid */
 @media (max-width: 252px) {
+  body {
+    justify-content: flex-start;
+  }
   #links-grid {
     max-width: 150px;
   }
