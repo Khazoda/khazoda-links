@@ -3,24 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="June's Links" />
-    <meta name="author" content="June Faleiro" />
-    <meta name="keywords" content="June Faleiro, Links, Portfolio, Projects, Work, Contact" />
+    <meta name="description" content="Khazoda's Links" />
+    <meta name="author" content="Khazoda" />
+    <meta name="keywords" content="Khazoda, Links, Projects, Mods" />
 
-    <title>June's Links</title>
+    <title>Khazoda's Links</title>
     <link rel="stylesheet" href="style.css" />
 
     <link rel="preload" href="static/pointer.cur" as="image" />
     <link rel="preload" href="static/pointer_blue.cur" as="image" />
 
-    <script type="importmap">
-      {
-        "imports": {
-          "three": "https://cdn.jsdelivr.net/npm/three@0.176.0/build/three.module.js",
-          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.176.0/examples/jsm/"
-        }
-      }
-    </script>
     <noscript>
       <style>
         /* Make cursor blue on hover when JS is disabled */
@@ -36,86 +28,42 @@
     <script src="script.js"></script>
   </head>
   <body>
-    <div id="gpu-container"></div>
     <div id="url-display"></div>
+    
     <div id="links-container">
       <div id="links-grid">
-        <!-- Static fallback links that work without JavaScript -->
-        <!-- These will be enhanced by JS when available -->
-        <a class="bubble" href="https://khazoda.com" target="_blank" rel="noopener noreferrer" data-site-key="khazoda">
+        <a class="bubble" href="https://modrinth.com/mod/plushables" target="_blank" rel="noopener noreferrer" data-site-key="platform_plushables">
           <div class="icon">
-            <img src="/static/links/khazoda.png" alt="khazoda.com" />
+            <img src="/static/links/platform_plushables.webp" alt="modrinth.com/mod/plushables" />
           </div>
         </a>
-        <a class="bubble" href="https://junefaleiro.com" target="_blank" rel="noopener noreferrer" data-site-key="junefaleiro">
+        <a class="bubble" href="https://modrinth.com/mod/basicweapons" target="_blank" rel="noopener noreferrer" data-site-key="platform_basicweapons">
           <div class="icon">
-            <img src="/static/links/junefaleiro.png" alt="junefaleiro.com" class="pixelated" />
+            <img src="/static/links/platform_basicweapons.webp" alt="modrinth.com/mod/basicweapons" />
           </div>
         </a>
-        <a class="bubble" href="https://seacroak.com" target="_blank" rel="noopener noreferrer" data-site-key="seacroak">
+        <a class="bubble" href="https://modrinth.com/mod/bronze" target="_blank" rel="noopener noreferrer" data-site-key="platform_bronze">
           <div class="icon">
-            <img src="/static/links/seacroak.png" alt="seacroak.com" />
+            <img src="/static/links/platform_bronze.webp" alt="modrinth.com/mod/bronze" />
           </div>
         </a>
-        <a class="bubble" href="https://github.com/khazoda" target="_blank" rel="noopener noreferrer" data-site-key="github">
+        <a class="bubble" href="https://modrinth.com/mod/basicstorage" target="_blank" rel="noopener noreferrer" data-site-key="platform_basicstorage">
           <div class="icon">
-            <img src="/static/links/github.png" alt="github.com/khazoda" />
+            <img src="/static/links/platform_basicstorage.webp" alt="modrinth.com/mod/basicstorage" />
           </div>
         </a>
-        <a class="bubble" href="https://linkedin.com/in/junef" target="_blank" rel="noopener noreferrer" data-site-key="linkedin">
+        <a class="bubble" href="https://modrinth.com/mod/breakerplacer" target="_blank" rel="noopener noreferrer" data-site-key="platform_breakerplacer">
           <div class="icon">
-            <img src="/static/links/linkedin.png" alt="linkedin.com/in/junef" />
+            <img src="/static/links/platform_breakerplacer.webp" alt="modrinth.com/mod/breakerplacer" />
           </div>
         </a>
-        <a class="bubble" href="https://bsky.app/profile/khazoda.com" target="_blank" rel="noopener noreferrer" data-site-key="bluesky">
+        <a class="bubble" href="https://modrinth.com/mod/heirlooms" target="_blank" rel="noopener noreferrer" data-site-key="platform_heirlooms">
           <div class="icon">
-            <img src="/static/links/bluesky.png" alt="bsky.app/profile/khazoda.com" />
+            <img src="/static/links/platform_heirlooms.webp" alt="modrinth.com/mod/heirlooms" />
           </div>
         </a>
-        <a class="bubble" href="https://modrinth.com/user/june" target="_blank" rel="noopener noreferrer" data-site-key="modrinth">
-          <div class="icon">
-            <img src="/static/links/modrinth.png" alt="modrinth.com/user/june" />
-          </div>
-        </a>
-        <a
-          class="bubble"
-          href="https://curseforge.com/members/khazoda/projects"
-          target="_blank"
-          rel="noopener noreferrer"
-          data-site-key="curseforge">
-          <div class="icon">
-            <img src="/static/links/curseforge.png" alt="curseforge.com/members/khazoda/projects" />
-          </div>
-        </a>
-        <a
-          class="bubble"
-          href="https://khazoda.com/basicweapons/materialpacks"
-          target="_blank"
-          rel="noopener noreferrer"
-          data-site-key="materialpack">
-          <div class="icon">
-            <img src="/static/links/materialpack.png" alt="khazoda.com/basicweapons/materialpacks" />
-          </div>
-        </a>
-        <a
-          class="bubble"
-          href="https://chromewebstore.google.com/detail/sleek-new-tab/cihhogbfacooijaegidojdlfdipebmpg"
-          target="_blank"
-          rel="noopener noreferrer"
-          data-site-key="sleek_new_tab">
-          <div class="icon">
-            <img
-              src="/static/links/sleek_new_tab.png"
-              alt="chromewebstore.google.com/detail/sleek-new-tab/cihhogbfacooijaegidojdlfdipebmpg" />
-          </div>
-        </a>
-        <a class="bubble" href="https://froggyvibe.seacroak.com/" target="_blank" rel="noopener noreferrer" data-site-key="froggyvibe">
-          <div class="icon">
-            <img src="/static/links/froggyvibe.png" alt="froggyvibe.seacroak.com" />
-          </div>
-        </a>
-        <!-- Empty bubbles for grid layout - hidden without JS -->
-        <a class="bubble" href="#" target="_blank" rel="noopener noreferrer"> </a>
+        
+        <!-- Empty bubbles -->
         <a class="bubble" href="#" target="_blank" rel="noopener noreferrer"> </a>
         <a class="bubble" href="#" target="_blank" rel="noopener noreferrer"> </a>
         <a class="bubble" href="#" target="_blank" rel="noopener noreferrer"> </a>
@@ -130,6 +78,5 @@
         <a class="bubble" href="#" target="_blank" rel="noopener noreferrer"> </a>
       </div>
     </div>
-    <script type="module" src="gpu_stuff.js"></script>
   </body>
 </html>

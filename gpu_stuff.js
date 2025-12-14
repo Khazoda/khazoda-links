@@ -362,7 +362,7 @@ function initScene() {
   }
 
   // Display GLTF models or voxel art from images
-  async function showModel(modelPath = "static/bluesky.png") {
+  async function showModel(modelPath = "static/bluesky.webp") {
     const currentRotation = modelState.current?.rotation || { x: 0, y: 0, z: 0 };
 
     if (modelState.current) {
@@ -386,7 +386,7 @@ function initScene() {
 
       scene.add(modelState.current);
       modelState.isVisible = true;
-      modelState.targetScale = isGLTF ? 7 : 1;
+      modelState.targetScale = isGLTF ? 7 : 0.25;
       modelState.currentScale = 0;
       modelState.current.rotation.set(currentRotation.x, currentRotation.y, currentRotation.z);
       modelState.rotationSpeed = 0.005;

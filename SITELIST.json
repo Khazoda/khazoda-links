@@ -1,16 +1,8 @@
 {
-  "khazoda": "khazoda.com",
-  "junefaleiro": "junefaleiro.com",
-  "seacroak": "seacroak.com",
-
-  "github": "github.com/khazoda",
-  "linkedin": "linkedin.com/in/junef", 
-  "bluesky": "bsky.app/profile/khazoda.com",
-
-  "modrinth": "modrinth.com/user/june",
-  "curseforge": "curseforge.com/members/khazoda/projects",
-
-  "materialpack": "khazoda.com/basicweapons/materialpacks",
-  "sleek_new_tab": "chromewebstore.google.com/detail/sleek-new-tab/cihhogbfacooijaegidojdlfdipebmpg",
-  "froggyvibe": "froggyvibe.seacroak.com/"
+  "platform_plushables": "modrinth.com/mod/plushables",
+  "platform_basicweapons": "modrinth.com/mod/basicweapons",
+  "platform_bronze": "modrinth.com/mod/bronze",
+  "platform_basicstorage": "modrinth.com/mod/basicstorage",
+  "platform_breakerplacer": "modrinth.com/mod/breakerplacer",
+  "platform_heirlooms": "modrinth.com/mod/heirlooms"
 }

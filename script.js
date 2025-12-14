@@ -8,8 +8,8 @@ document.addEventListener("DOMContentLoaded", async function () {
     timeouts: {
       click: null,
       typewriter: null,
-      modelLoad: null,
     },
+    typewriterSpeed: 30,
   };
 
   // Cached DOM elements
@@ -26,9 +26,6 @@ document.addEventListener("DOMContentLoaded", async function () {
     initializeAudioOnFirstInteraction();
     setupBubbleElements();
     setupEventListeners();
-    setTimeout(() => {
-      document.getElementById("gpu-container").classList.add("loaded");
-    }, 100);
   }
 
   async function loadSiteData() {
@@ -40,7 +37,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
   }
 
-  // Lazy audio initialization for autoplay compliance
+  // Lazy audio initialization
   function initializeAudioOnFirstInteraction() {
     document.addEventListener(
       "click",
@@ -65,25 +62,6 @@ document.addEventListener("DOMContentLoaded", async function () {
   function setupEventListeners() {
     document.addEventListener("click", handleDocumentClick);
     document.addEventListener("keydown", handleKeyDown);
-
-    // Prevent white flash during page navigation
-    function handleNavigationStart() {
-      document.body.classList.add("navigating");
-    }
-
-    function handleNavigationEnd() {
-      document.body.classList.remove("navigating");
-    }
-
-    window.addEventListener("beforeunload", handleNavigationStart);
-    window.addEventListener("pagehide", handleNavigationStart);
-    document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "hidden") {
-        handleNavigationStart();
-      } else if (document.visibilityState === "visible") {
-        handleNavigationEnd();
-      }
-    });
   }
 
   async function initializeAudioContext() {
@@ -95,7 +73,6 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
   }
 
-  // Load audio once and reuse
   async function loadSelectSound() {
     if (appState.selectSoundBuffer) return;
 
@@ -104,7 +81,7 @@ document.addEventListener("DOMContentLoaded", async function () {
       const arrayBuffer = await response.arrayBuffer();
       appState.selectSoundBuffer = await appState.audioContext.decodeAudioData(arrayBuffer);
     } catch (error) {
-      throw new Error("Failed to load select sound");
+      console.warn("Failed to load select sound", error);
     }
   }
 
@@ -113,21 +90,20 @@ document.addEventListener("DOMContentLoaded", async function () {
       await initializeAudioContext();
       await loadSelectSound();
 
-      // Create new nodes for each play
-      const source = appState.audioContext.createBufferSource();
-      const gainNode = appState.audioContext.createGain();
+      if (appState.selectSoundBuffer) {
+        const source = appState.audioContext.createBufferSource();
+        const gainNode = appState.audioContext.createGain();
 
-      source.buffer = appState.selectSoundBuffer;
-      gainNode.gain.value = 0.8;
-      source.connect(gainNode);
-      gainNode.connect(appState.audioContext.destination);
-      source.start();
+        source.buffer = appState.selectSoundBuffer;
+        gainNode.gain.value = 0.8;
+        source.connect(gainNode);
+        gainNode.connect(appState.audioContext.destination);
+        source.start();
+      }
     } catch (err) {
-      console.log("Audio playback failed:", err);
     }
   }
 
-  // Match bubble links to site data
   function getSiteKeyFromBubble(bubble) {
     if (bubble.dataset.siteKey) return bubble.dataset.siteKey;
 
@@ -136,27 +112,17 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     const cleanUrl = href.replace(/^https?:\/\//, "");
     return (
-      Object.entries(appState.siteData).find(([key, url]) => cleanUrl.includes(url) || url.includes(cleanUrl.split("/")[0]))?.[0] || null
+      Object.entries(appState.siteData).find(([key, url]) => 
+        cleanUrl.includes(url) || url.includes(cleanUrl.split("/")[0])
+      )?.[0] || null
     );
   }
 
-  // Check for 3D model, fallback to 2D
-  async function checkModelExists(siteKey) {
-    try {
-      const modelPath = `/static/links/${siteKey}_model.gltf`;
-      const response = await fetch(modelPath, { method: "HEAD" });
-      return response.ok ? modelPath : `/static/links/${siteKey}.png`;
-    } catch {
-      return `/static/links/${siteKey}.png`;
-    }
-  }
-
-  // Centralized timeout management
   function clearAllTimeouts() {
-    Object.values(appState.timeouts).forEach((timeout) => {
-      if (timeout) clearTimeout(timeout);
-    });
-    appState.timeouts = { click: null, typewriter: null, modelLoad: null };
+    if (appState.timeouts.typewriter) {
+      clearTimeout(appState.timeouts.typewriter);
+      appState.timeouts.typewriter = null;
+    }
   }
 
   function clearTypewriterEffect(shouldHide = true) {
@@ -166,66 +132,38 @@ document.addEventListener("DOMContentLoaded", async function () {
       }
       elements.urlDisplay.textContent = "";
     }
-    if (appState.timeouts.typewriter) {
-      clearTimeout(appState.timeouts.typewriter);
-      appState.timeouts.typewriter = null;
-    }
-  }
-
-  function clearAllPendingOperations(shouldHideUrlDisplay = true) {
-    clearTypewriterEffect(shouldHideUrlDisplay);
     clearAllTimeouts();
-    if (window.faviconDisplay) window.faviconDisplay.hide();
-  }
-
-  // Load and display 3D model with URL
-  async function showModelForBubble(bubble) {
-    const iconImg = bubble.querySelector(".icon img");
-    if (!iconImg || !window.faviconDisplay) return;
-
-    const siteKey = getSiteKeyFromBubble(bubble);
-
-    if (siteKey) {
-      // Small delay for cleanup
-      appState.timeouts.modelLoad = setTimeout(async () => {
-        if (appState.selectedBubble === bubble) {
-          const modelPath = await checkModelExists(siteKey);
-          window.faviconDisplay.show(modelPath);
-
-          const url = appState.siteData[siteKey];
-          if (url && appState.selectedBubble === bubble) {
-            startTypewriterEffect(url, 60);
-          }
-        }
-      }, 50);
-    } else {
-      // Fallback to favicon
-      appState.timeouts.modelLoad = setTimeout(() => {
-        if (appState.selectedBubble === bubble) {
-          const faviconPath = iconImg.src;
-          const relativePath = faviconPath.includes("/static/") ? faviconPath.substring(faviconPath.indexOf("/static/") + 1) : faviconPath;
-          window.faviconDisplay.show(relativePath);
-        }
-      }, 50);
-    }
   }
 
   async function selectBubble(bubble, hadPreviousSelection = false) {
-    clearAllPendingOperations(!hadPreviousSelection);
+    clearTypewriterEffect(!hadPreviousSelection);
 
     appState.selectedBubble = bubble;
     bubble.focus();
     playSelectSound();
 
-    await showModelForBubble(bubble);
+    const siteKey = getSiteKeyFromBubble(bubble);
+    if (siteKey && appState.siteData[siteKey]) {
+      const url = appState.siteData[siteKey];
+      
+      setTimeout(() => startTypewriterEffect(url, appState.typewriterSpeed), 50); 
+      
+    } else {
+        // Fallback: type the HREF if no map exists
+        const rawUrl = bubble.getAttribute('href');
+        if(rawUrl && rawUrl !== "#") {
+            const cleanRaw = rawUrl.replace(/^https?:\/\//, "");
+            setTimeout(() => startTypewriterEffect(cleanRaw, appState.typewriterSpeed), 50); 
+        }
+    }
   }
 
-  function clearSelection(shouldHideUrlDisplay = true) {
+  function clearSelection() {
     if (appState.selectedBubble) {
       appState.selectedBubble.blur();
       appState.selectedBubble = null;
     }
-    clearAllPendingOperations(shouldHideUrlDisplay);
+    clearTypewriterEffect(true);
   }
 
   function openBubbleLink(bubble) {
@@ -235,7 +173,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
   }
 
-  // Dual-click: select then open
+  // Dual-click interaction: 1st click selects/types, 2nd click opens
   function handleBubbleClick(event) {
     event.preventDefault();
     const bubble = this;
@@ -247,10 +185,13 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
 
     const hadPreviousSelection = appState.selectedBubble !== null;
-    clearSelection(!hadPreviousSelection);
+    if (hadPreviousSelection) {
+        appState.selectedBubble.blur();
+    }
     selectBubble(bubble, hadPreviousSelection);
   }
 
+  // --- Grid Navigation Logic ---
   function getBubblesArray() {
     if (!elements.bubbles) {
       elements.bubbles = document.querySelectorAll(".bubble:has(div)");
@@ -263,7 +204,6 @@ document.addEventListener("DOMContentLoaded", async function () {
     return getComputedStyle(elements.linksGrid).gridTemplateColumns.split(" ").length;
   }
 
-  // Calculate next position in grid
   function getNextBubbleIndex(currentIndex, direction, bubblesCount, cols) {
     switch (direction) {
       case "ArrowLeft":
@@ -285,7 +225,6 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
   }
 
-  // Keyboard navigation respecting grid layout
   function navigateGrid(direction) {
     const bubblesArray = getBubblesArray();
     const currentIndex = bubblesArray.indexOf(document.activeElement);
@@ -301,7 +240,6 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     if (newElement) {
       const hadPreviousSelection = appState.selectedBubble !== null;
-      clearSelection(!hadPreviousSelection);
       selectBubble(newElement, hadPreviousSelection);
     }
   }
@@ -318,16 +256,16 @@ document.addEventListener("DOMContentLoaded", async function () {
     } else if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) {
       event.preventDefault();
       navigateGrid(event.key);
+    } else if (event.key === "Enter" && appState.selectedBubble) {
+        openBubbleLink(appState.selectedBubble);
     }
   }
 
-  // Character-by-character text animation
+  // --- Typewriter Logic ---
   function startTypewriterEffect(text, speed = 50) {
     if (!elements.urlDisplay) return;
 
-    const wasVisible = elements.urlDisplay.classList.contains("visible");
-    clearTypewriterEffect(!wasVisible);
-
+    clearAllTimeouts();
     elements.urlDisplay.textContent = "";
     elements.urlDisplay.classList.add("visible");
 
@@ -341,7 +279,6 @@ document.addEventListener("DOMContentLoaded", async function () {
       }
     }
 
-    // Initial delay
-    appState.timeouts.typewriter = setTimeout(typeNextCharacter, 200);
+    typeNextCharacter();
   }
 });
